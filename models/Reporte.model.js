@@ -35,6 +35,11 @@ const esquemaReportes = new Schema({
         required: false,
         // index: true,
     },
+    // FechaCreacion:{
+    //     type: Date,
+    //     required: true,
+    //     // index: true,
+    // },
     Autor:{
         type: String,
         required: true,

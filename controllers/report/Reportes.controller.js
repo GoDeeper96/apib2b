@@ -186,40 +186,92 @@ export const crearReporte = async(req,res)=>{
                 // })
             }
         }
+        const itemsStorageParsed = JSON.parse(FormData.itemsStorage)
         if(duplicado&&dupId) //CAMBIARA CUANDO SE PONGA LA LOGICA DE COMPARTIR
         {
-            await ReporteModel.findByIdAndDelete(dupId)
-            await Reportes_UsuariosModel.deleteMany({PKIDReporte:dupId})
+            // await ReporteModel.findByIdAndDelete(dupId)
+            // await Reportes_UsuariosModel.deleteMany({PKIDReporte:dupId})
             await PaginaReportesModel.deleteMany({PKIDReporte:dupId})
-        }
-        const itemsStorageParsed = JSON.parse(FormData.itemsStorage)
-        if(FormData.Favorito) //SI ES FAVORITO ENTONCES CAMBIAR EL FAVORITO ANTERIOR Y PONERLE FALSO Y AL NUEVO HAY QUE PONERLE TRUE SOLO DEBE EXISTIR UN FAVORITOP
+            if(FormData.Favorito) //SI ES FAVORITO ENTONCES CAMBIAR EL FAVORITO ANTERIOR Y PONERLE FALSO Y AL NUEVO HAY QUE PONERLE TRUE SOLO DEBE EXISTIR UN FAVORITOP
         
-        {   
-            let reps = []
-            for (let index = 0; index < repUsuarios.length; index++) {
-                const existeFavorito = await ReporteModel.findById(repUsuarios[index].PKIDReporte)
-                if(existeFavorito&&existeFavorito.Favorito)
-                {
-                    const updateado = await ReporteModel.findByIdAndUpdate(repUsuarios[index].PKIDReporte,
+            {   
+            
+                for (let index = 0; index < repUsuarios.length; index++) {
+                    const existeFavorito = await ReporteModel.findById(repUsuarios[index].PKIDReporte)
+                    if(existeFavorito&&existeFavorito.Favorito)
                     {
-                        Favorito:false
+                        const updateado = await ReporteModel.findByIdAndUpdate(repUsuarios[index].PKIDReporte,
+                        {
+                            Favorito:false
+                        }
+                    )
                     }
-                )
+                    
                 }
+               
+            }
+            const reporteUpdate = await ReporteModel.findByIdAndUpdate(dupId,{
+                Nombre:FormData.Nombre,
+                Favorito:FormData.Favorito?true:false,
+                Descripcion:FormData.Descripcion,
+                DinamicoEstatico:FormData.DinamicoEstatico?true:false,
+                RutaImagenReporte:'',
+                Editable:FormData.Editable?true:false,
+                Autor:FormData.Usuario
+            })
+            // const reporteUsuarioUpdate = await Reportes_UsuariosModel.findOneAndUpdate({
+
+            // },{})
+            for (let index = 0; index < FormData.Paginas.length; index++) {
+            
+                const PaginaN = itemsStorageParsed.filter(x=>x.idReporte===FormData.Paginas[index].idReporte)
+                
+                const nuevaPagina = new PaginaReportesModel({
+                    // Usuario:FormData.Usuario,
+                    PKIDReporte:dupId,
+                    IDReporte:FormData.Nombre,
+                    Descripcion:FormData.Paginas[index].DescripcionReporte,
+                    Nombre:FormData.Paginas[index].idReporte,
+                    ReporteData:JSON.stringify(PaginaN)
+                })
+                await nuevaPagina.save()
                 
             }
-           
+            return res.json({
+                estado:'Success',
+                mensaje:'Ok',
+                error:null
+            })
         }
+        else{
         //1.PRIMERO CREAR REPORTE EN REPORTEMODEL
         //2.CREAR REPORTES EN REPORTE USUARIO 
+        if(FormData.Favorito) //SI ES FAVORITO ENTONCES CAMBIAR EL FAVORITO ANTERIOR Y PONERLE FALSO Y AL NUEVO HAY QUE PONERLE TRUE SOLO DEBE EXISTIR UN FAVORITOP
+        
+            {   
+               
+                for (let index = 0; index < repUsuarios.length; index++) {
+                    const existeFavorito = await ReporteModel.findById(repUsuarios[index].PKIDReporte)
+                    if(existeFavorito&&existeFavorito.Favorito)
+                    {
+                        const updateado = await ReporteModel.findByIdAndUpdate(repUsuarios[index].PKIDReporte,
+                        {
+                            Favorito:false
+                        }
+                    )
+                    }
+                    
+                }
+               
+            }
         const reporte = new ReporteModel({
             Nombre:FormData.Nombre,
-            Favorito:FormData.Favorito,
+            Favorito:FormData.Favorito?true:false,
             Descripcion:FormData.Descripcion,
-            DinamicoEstatico:FormData.DinamicoEstatico,
+            DinamicoEstatico:FormData.DinamicoEstatico?true:false,
             RutaImagenReporte:'',
-            Editable:FormData.Editable
+            Editable:FormData.Editable?true:false,
+            Autor:FormData.Usuario
         })
         await reporte.save()
 
@@ -248,11 +300,15 @@ export const crearReporte = async(req,res)=>{
             await nuevaPagina.save()
             
         }
-        res.json({
+        return res.json({
             estado:'Success',
             mensaje:'Ok',
             error:null
         })
+        }   
+     
+        
+        
     } catch (error) {
         console.log(error)
         const getError = MapError(error)

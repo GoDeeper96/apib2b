@@ -6,8 +6,8 @@ async function main() {
     try {
       
       await connectDb()
-      app.listen(4000,()=>{
-        console.log("Api b2b Puerto 4000")
+      app.listen(8084,()=>{
+        console.log("Api b2b Puerto 8084")
         
     })
     } catch (error) {

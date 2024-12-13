@@ -6,10 +6,10 @@ const esquemaFuncionesXUsuario  = new Schema({
       type: String,
       required: true,
     },
-    IDFuncion: {
-        type: String,
-        required: true,
-    },
+    // IDFuncion: {
+    //     type: String,
+    //     required: true,
+    // },
     Funcion: {
         type: String,
         required: true,

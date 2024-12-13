@@ -2,15 +2,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 
 
 const esquemaFunciones = new Schema({
-    // Usuario: {
-    //   type: String,
-    //   required: true,
-    // },
-    IDFuncion: {
-        type: Number,
-        required: true,
-        unique:true
-    },
+
     Funcion: {
         type: String,
         required: true,
