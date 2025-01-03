@@ -1,4 +1,6 @@
+import moment from "moment"
 import { MapError } from "../../errorHelper/ErrorApi.js"
+import EventosModel from "../../models/Eventos.model.js"
 import PaginaReportesModel from "../../models/PaginaReportes.model.js"
 import ReporteModel from "../../models/Reporte.model.js"
 import Reportes_UsuariosModel from "../../models/Reportes_Usuarios.model.js"
@@ -167,6 +169,22 @@ export const crearReporte = async(req,res)=>{
         const { FormData } = req.body
         // console.log(FormData)
         // console.log(req.body)
+        // const nuevoPost = new EventosModel({
+        //     Autor:FormData.Autor,
+        //     EventoNombre:'Guardando cambios en Reporte...',
+        //     Descripcion:`Creando reporte ${FormData.Nombre}`,
+        //     Funcion:'crear:reporte', //CREAR = EDITAR
+        //     ConsultaPayload:JSON.stringify(req.body),
+        //     Response:'En progreso...',
+        //     ResponseTamaño:0,
+        //     FechaStart:moment().format('YYYY-MM-DD hh:mm:ss'),
+        //     FechaEnd:null,
+        //     TimeSpentSec:0,
+        //     Status:'LOADING',
+        //     StatusCode:0
+        // })
+        // await nuevoPost.save()    
+        let nuevoPost = null
     try {
         let duplicado = false
         let dupId = null
@@ -189,6 +207,25 @@ export const crearReporte = async(req,res)=>{
         const itemsStorageParsed = JSON.parse(FormData.itemsStorage)
         if(duplicado&&dupId) //CAMBIARA CUANDO SE PONGA LA LOGICA DE COMPARTIR
         {
+            nuevoPost = new EventosModel({
+                Autor:FormData.Autor,
+                EventoNombre:'Editando reporte...',
+                Descripcion:`Editando reporte ${FormData.Nombre}`,
+                Funcion:'editar:reporte', //CREAR = EDITAR
+                ConsultaPayload:JSON.stringify(req.body),
+                Response:'En progreso...',
+                ResponseTamaño:0,
+                FechaStart:moment().format('YYYY-MM-DD hh:mm:ss'),
+                FechaEnd:null,
+                TimeSpentSec:0,
+                Status:'LOADING',
+                StatusCode:0
+            })
+            await nuevoPost.save()    
+
+
+
+
             // await ReporteModel.findByIdAndDelete(dupId)
             // await Reportes_UsuariosModel.deleteMany({PKIDReporte:dupId})
             await PaginaReportesModel.deleteMany({PKIDReporte:dupId})
@@ -237,6 +274,21 @@ export const crearReporte = async(req,res)=>{
                 await nuevaPagina.save()
                 
             }
+            
+            // const pivotDataSource = getPivotDataSource(query,JSON.parse(dataRedisExisteConQuery))
+            const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
+            const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
+            const ResponseTamaño = 1;
+
+            // Actualizar el evento con estado "DONE"
+            await EventosModel.findByIdAndUpdate(nuevoPost.id, {
+                Response: 'FormData',
+                ResponseTamaño,
+                FechaEnd,
+                TimeSpentSec,
+                Status: 'DONE',
+                StatusCode: 200
+            });
             return res.json({
                 estado:'Success',
                 mensaje:'Ok',
@@ -244,6 +296,22 @@ export const crearReporte = async(req,res)=>{
             })
         }
         else{
+            nuevoPost = new EventosModel({
+                Autor:FormData.Autor,
+                EventoNombre:'Creando reporte...',
+                Descripcion:`Creando reporte ${FormData.Nombre}`,
+                Funcion:'crear:reporte', //CREAR = EDITAR
+                ConsultaPayload:JSON.stringify(req.body),
+                Response:'En progreso...',
+                ResponseTamaño:0,
+                FechaStart:moment().format('YYYY-MM-DD hh:mm:ss'),
+                FechaEnd:null,
+                TimeSpentSec:0,
+                Status:'LOADING',
+                StatusCode:0
+            })
+            await nuevoPost.save()  
+
         //1.PRIMERO CREAR REPORTE EN REPORTEMODEL
         //2.CREAR REPORTES EN REPORTE USUARIO 
         if(FormData.Favorito) //SI ES FAVORITO ENTONCES CAMBIAR EL FAVORITO ANTERIOR Y PONERLE FALSO Y AL NUEVO HAY QUE PONERLE TRUE SOLO DEBE EXISTIR UN FAVORITOP
@@ -300,6 +368,20 @@ export const crearReporte = async(req,res)=>{
             await nuevaPagina.save()
             
         }
+        // const pivotDataSource = getPivotDataSource(query,JSON.parse(dataRedisExisteConQuery))
+        const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
+        const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
+        const ResponseTamaño = 1;
+
+        // Actualizar el evento con estado "DONE"
+        await EventosModel.findByIdAndUpdate(nuevoPost.id, {
+            Response: 'FormData',
+            ResponseTamaño,
+            FechaEnd,
+            TimeSpentSec,
+            Status: 'DONE',
+            StatusCode: 200
+        });
         return res.json({
             estado:'Success',
             mensaje:'Ok',
@@ -311,13 +393,42 @@ export const crearReporte = async(req,res)=>{
         
     } catch (error) {
         console.log(error)
+        const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
+        const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
+        // Intentar actualizar el evento solo si fue creado exitosamente
+        if (nuevoPost && nuevoPost.id) {
+            await EventosModel.findByIdAndUpdate(nuevoPost.id, {
+                Response: JSON.stringify(error.message),
+                ResponseTamaño: JSON.stringify(error.message).length,
+                FechaEnd,
+                TimeSpentSec,
+                Status: 'ERROR',
+                StatusCode: 500
+            });
+        }
         const getError = MapError(error)
         console.log(getError)
         res.status(500).send(getError)  
     }
 }
 export const deleteReporte = async(req,res)=>{
-    const {idreporte} = req.body
+    const {idreporte,Autor} = req.body
+    const rep = await ReporteModel.findById(idreporte)
+    const nuevoPost = new EventosModel({
+        Autor:Autor,
+        EventoNombre:'Eliminando Reporte...',
+        Descripcion:`Eliminando reporte ${rep.Nombre}`,
+        Funcion:'eliminar:reporte',
+        ConsultaPayload:JSON.stringify(req.body),
+        Response:'En progreso...',
+        ResponseTamaño:0,
+        FechaStart:moment().format('YYYY-MM-DD hh:mm:ss'),
+        FechaEnd:null,
+        TimeSpentSec:0,
+        Status:'LOADING',
+        StatusCode:0
+    })
+    await nuevoPost.save()    
     try {
         //ADVERTIR COMPARTIDO
 
@@ -328,6 +439,20 @@ export const deleteReporte = async(req,res)=>{
         const rep2 = await Reportes_UsuariosModel.deleteMany({
             PKIDReporte:idreporte
         })
+          // const pivotDataSource = getPivotDataSource(query,JSON.parse(dataRedisExisteConQuery))
+          const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
+          const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
+          const ResponseTamaño = 1;
+  
+          // Actualizar el evento con estado "DONE"
+          await EventosModel.findByIdAndUpdate(nuevoPost.id, {
+              Response: 'FormData',
+              ResponseTamaño,
+              FechaEnd,
+              TimeSpentSec,
+              Status: 'DONE',
+              StatusCode: 200
+          });
         res.json({
             estado:'Success',
             mensaje:'Ok',
@@ -335,6 +460,19 @@ export const deleteReporte = async(req,res)=>{
         })  
     } catch (error) {
         console.error(error);
+        const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
+        const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
+        // Intentar actualizar el evento solo si fue creado exitosamente
+        if (nuevoPost && nuevoPost.id) {
+            await EventosModel.findByIdAndUpdate(nuevoPost.id, {
+                Response: JSON.stringify(error.message),
+                ResponseTamaño: JSON.stringify(error.message).length,
+                FechaEnd,
+                TimeSpentSec,
+                Status: 'ERROR',
+                StatusCode: 500
+            });
+        }
         const getError = MapError(error); // Función para mapear el error
         res.status(500).send(getError);      
     }

@@ -4,6 +4,10 @@ import config from '../../config.js';
 import UsuariosModel from '../../models/Usuarios.model.js';
 import SesionUsuarioModel from '../../models/SesionUsuario.model.js';
 import { MapError } from '../../errorHelper/ErrorApi.js';
+import LicenciasXUsuarios from '../../models/LicenciasXUsuarios.js';
+import LicenciaModel from '../../models/Licencia.model.js';
+import moment from 'moment';
+import QueryXUsuarioModel from '../../models/QueryXUsuario.model.js';
 export const generateToken = (id)=>{
     return jwt.sign({id},config.token,{
         expiresIn:'8h',
@@ -11,7 +15,8 @@ export const generateToken = (id)=>{
     })
 }
 export const ProtectRoute = async(req,res)=>{
-    const { Usuario, token, permiso} = req.body
+    const { Usuario, token, permiso,Ruta} = req.body
+    console.log(Ruta)
     if(!Usuario||!token)
     {   
         
@@ -22,6 +27,17 @@ export const ProtectRoute = async(req,res)=>{
            }) 
     }
     try {
+       
+        if(Ruta==='Panel')
+        {
+            const UsuarioTieneQuery = await QueryXUsuarioModel.findOne({Usuario:Usuario})
+
+            if(!UsuarioTieneQuery)return res.status(401).send({
+                estado:"Error",
+                mensaje:"Error, usuario no encontrado, se cancela la autenticacion",
+                error:"Error de autenticacion"
+            })
+        }
         //VERIFICAR SI USUARIO EXISTE Y QUE NO TENGA MAS DE UNA SESION ABIERTA
         const ExisteUsuario = await UsuariosModel.findOne({Usuario:Usuario})
         if(!ExisteUsuario) return res.status(401).send({
@@ -29,6 +45,40 @@ export const ProtectRoute = async(req,res)=>{
             mensaje:"Error, usuario no encontrado, se cancela la autenticacion",
             error:"Error de autenticacion"
         })
+        //VERIFICAR SI TIENE LICENCIA ACTIVA
+        const usuarioConLicencia= await LicenciasXUsuarios.findOne({Usuario:Usuario
+        })
+        if(!usuarioConLicencia) return res.status(401).send({
+            estado:"Usuario sin licencia",
+            mensaje:"Error, usuario no encontrado, se cancela la autenticacion",
+            error:"Error de licencia"
+        })
+        // Verificar el rango de fechas de la licencia
+        const licencia = await LicenciaModel.findById(usuarioConLicencia.IDLicencia);
+        if (!licencia) {
+            return res.status(401).send({
+                estado:"Error",
+                mensaje:"No se encontro informacion de la licencia.",
+                error:"Error de autenticacion"
+            })
+        }
+
+        // Obtener la fecha actual
+        const fechaActual = moment();
+
+        // Validar que la fecha actual esté dentro del rango
+        const licenciaValida =
+            fechaActual.isBetween(licencia.FechaEmpiezo, licencia.FechaExpiracion, null, '[]'); // '[]' incluye los límites
+
+        if (!licenciaValida)  return res.status(401).send({
+                estado:"Error",
+                mensaje:"La licencia del usuario ha expirado o aún no es válida.",
+                error:"Error de autenticacion"
+            })
+
+        
+        
+        
         const SesionActiva = await SesionUsuarioModel.findOne({Usuario:Usuario})
         if(SesionActiva.SesionesActivas>1) return res.status(401).send({
             estado:"Error",
@@ -61,7 +111,7 @@ export const ProtectRoute = async(req,res)=>{
     }
 }
 export const Login = async(req,res)=>{
-    console.log(req.body)
+    // console.log(req.body)
     const {Usuario,Contraseña} = req.body
     try {
        const existUsuario = await UsuariosModel.findOne({Usuario:Usuario}).select('+Contraseña')
@@ -70,12 +120,45 @@ export const Login = async(req,res)=>{
         estado:'Error',
         error:'Error'
        })
+    
        const { Contraseña: passwordHashed, Nombre, Correo, RutaImagenPerfil, Numero, _id,Rol,Empresa } = existUsuario;
        
        const Login = await bcrypt.compare(Contraseña, passwordHashed);
        const verificarSesionesActivas = await SesionUsuarioModel.findOne({
         Usuario:Usuario
        })
+       const usuarioConLicencia= await LicenciasXUsuarios.findOne({Usuario:Usuario
+       })
+ 
+       if(!usuarioConLicencia) return res.status(500).send({
+           estado:"Usuario sin licencia",
+           mensaje:"Error, usuario no encontrado, se cancela la autenticacion",
+           error:"Error de licencia"
+       })
+       console.log(usuarioConLicencia)
+       // Verificar el rango de fechas de la licencia
+       const licencia = await LicenciaModel.findById(usuarioConLicencia.IDLicencia);
+       if (!licencia) {
+           return res.status(500).send({
+               estado:"Error",
+               mensaje:"No se encontro informacion de la licencia.",
+               error:"Error de autenticacion"
+           })
+       }
+       console.log(licencia)
+       // Obtener la fecha actual
+       const fechaActual = moment();
+
+       // Validar que la fecha actual esté dentro del rango
+       const licenciaValida =
+           fechaActual.isBetween(licencia.FechaEmpiezo, licencia.FechaExpiracion, null, '[]'); // '[]' incluye los límites
+       console.log(licenciaValida)
+       if (!licenciaValida)  return res.status(500).send({
+               estado:"Error",
+               mensaje:"La licencia del usuario ha expirado o aún no es válida.",
+               error:"Error de autenticacion"
+           })
+
        if(verificarSesionesActivas)
        {
         return res.status(500).send({

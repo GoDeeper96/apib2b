@@ -3,14 +3,14 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 
 
 // Definir el esquema de ventas
-const Queries = new Schema({
+const esquemaQueries = new Schema({
 
-    QueryNombre:{
+    Nombre:{
         type: String,
         required: true,
         unique:true
     },
-    QueryString:{
+    QueryJson:{
         type: String,
         required: true,
 
@@ -18,6 +18,30 @@ const Queries = new Schema({
     },
     QueryTabla:{
         type: String,
+        required: true,
+
+        // index: true,
+    },
+    TablaOrigen:{
+        type: String,
+        required: false,
+
+        // index: true,
+    },
+    Descripcion:{
+        type: String,
+        required: false,
+ 
+        // index: true,
+    },
+    Dinamico:{
+        type: Boolean,
+        required: true,
+ 
+        // index: true,
+    },
+    Editable:{
+        type: Boolean,
         required: true,
  
         // index: true,
@@ -28,9 +52,15 @@ const Queries = new Schema({
  
         // index: true,
     },
+    Columnas:{
+        type: String,
+        required: true,
+ 
+        // index: true,
+    },
 },{
     timestamps:true,
     
 });
 
-export default mongoose.model('Queries',Queries)
+export default mongoose.model('filtroqueries',esquemaQueries)

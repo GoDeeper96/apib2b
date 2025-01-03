@@ -10,7 +10,10 @@ const esquemaNotificaciones = new Schema({
         type: String,
         required: true,
     },
-
+    Tipo:{
+        type: String,
+        required: true,
+    }
 
     
 },
@@ -19,4 +22,4 @@ const esquemaNotificaciones = new Schema({
 }
 );
 
-export default mongoose.model('Notificaciones',esquemaNotificaciones)
+export default mongoose.model('notificaciones',esquemaNotificaciones)

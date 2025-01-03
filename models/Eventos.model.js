@@ -35,23 +35,23 @@ const Eventos = new Schema({
         // index: true
       }, 
       ResponseTamaño: {
-        type: String,
-        required: true,
+        type: Number,
+        required: false,
         // index: true
       }, 
       FechaStart: {
-        type: Number,
+        type: Date,
         required: true,
         // index: true
       },
       FechaEnd: {
-        type: Number,
-        required: true,
+        type: Date,
+        required: false,
         // index: true
       },   
       TimeSpentSec: {
         type: Number,
-        required: true,
+        required: false,
         // index: true
       }, 
       Status: {
@@ -61,7 +61,7 @@ const Eventos = new Schema({
       },  
       StatusCode: {
         type: Number,
-        required: true,
+        required: false,
         // index: true
       },  
 },{

@@ -8,8 +8,8 @@ const router = Router()
 router.post('/getreportesnombre',protect,getReportesNombres)
 router.post('/getreportesporid',protect,getReportesSolido)
 router.post('/getreportesporquery',protect,getReporteQuery)
-router.post('/getreporte',protect,GetReporte)
-router.post('/postreporte',protect,crearReporte)
-router.post('/deletereporte',protect,deleteReporte)
+router.post('/getreporte',protect,GetReporte) 
+router.post('/postreporte',protect,crearReporte) //RASTREABLE
+router.post('/deletereporte',protect,deleteReporte) //RASTREABLE
 
 export default router

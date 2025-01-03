@@ -5,7 +5,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 // Definir el esquema de ventas
 const Queries = new Schema({
 
-    QueryNombre:{
+    IDQuery:{
         type: String,
         required: true,
     },
@@ -17,5 +17,5 @@ const Queries = new Schema({
     timestamps:true,
     
 });
-Queries.index({ Usuario: 1, QueryNombre: 1 }, { unique: true });
-export default mongoose.model('Queries',Queries)
+Queries.index({ Usuario: 1, IDQuery: 1 }, { unique: true });
+export default mongoose.model('usuarios_queries',Queries)
