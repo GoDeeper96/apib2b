@@ -40,12 +40,12 @@ const esquemaQueries = new Schema({
  
         // index: true,
     },
-    Editable:{
-        type: Boolean,
-        required: true,
+    // Editable:{
+    //     type: Boolean,
+    //     required: true,
  
-        // index: true,
-    },
+    //     // index: true,
+    // },
     Autor:{
         type: String,
         required: true,

@@ -17,6 +17,9 @@ cargaQueue.process(async (job) => {
     // Realiza la carga pesada
     const queryJson = JSON.stringify(FormData.queryTable);
     const columnas = FormData.columnas;
+    console.log(queryJson)
+    console.log(columnas)
+    console.log(nombre_tabla)
     const InsertarData = await axios.post('http://170.231.81.173:5000/b2b/cargab2b', {
       filter: queryJson,
       nombre_tabla: FormData.nombre_tabla,
@@ -46,6 +49,7 @@ cargaQueue.process(async (job) => {
     return InsertarData.data; // Retorna los datos procesados
   } catch (error) {
     // Manejo de errores
+    console.log(error)
     const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
     const TimeSpentSec = moment(FechaEnd).diff(moment(FormData.FechaStart), 'seconds');
     await EventosModel.findByIdAndUpdate(nuevoPostId, {
@@ -57,6 +61,7 @@ cargaQueue.process(async (job) => {
       StatusCode: 500,
     });
 
+    console.log(error.message)
     throw new Error(error.message);
   }
 });

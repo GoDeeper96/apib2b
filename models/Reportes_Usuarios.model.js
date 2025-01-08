@@ -13,7 +13,11 @@ const esquemaReportes = new Schema({
     PKIDReporte:{
         type: String,
         required: true,
-    }
+    },
+    Permisos:{
+        type: Array,
+        required: true,
+    },
 },{
     timestamps:true,
     collection:'usuarioreportes'

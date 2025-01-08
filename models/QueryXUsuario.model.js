@@ -12,7 +12,11 @@ const Queries = new Schema({
     Usuario:{
         type: String,
         required: true,
-    }
+    },
+    Permisos:{
+        type: Array,
+        required: true,
+    },
 },{
     timestamps:true,
     

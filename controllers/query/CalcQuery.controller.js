@@ -198,19 +198,31 @@ export const GetDataQuery = async(req,res)=>{
 export const GetQueriesVistaAutor = async(req,res)=>{
     const {Usuario} = req.body
     try {
-
+        let queriesTotales = []
+        const llavesQueries = await QueryXUsuarioModel.find({Usuario:Usuario})
+        for (let index = 0; index < llavesQueries.length; index++) {
+            if(llavesQueries[index].Permisos.includes('Ver'))
+            {
+                const querUsuario = await QueriesModel.findById(llavesQueries[index].IDQuery).lean()
+                queriesTotales.push({
+                    ...querUsuario,
+                    Permisos:llavesQueries[index].Permisos
+                })
+            }
+            
+        }
         //VISTA QUERIES DE LOS QUE CREO Y LOS QUE SE LE HAN COMPARTIDO
-        const QueriesAutor = await QueriesModel.find({Autor:Usuario}).lean() //LOS QUE CREO
-        const queriesCreadosIDs = QueriesAutor.map(query => query._id.toString());
-        const queriesQueMeCompartieron = await QueryXUsuarioModel.find({Usuario:Usuario}).lean() //LOS QUE ME COMPARTIERON //tambien incluye los mios
+        // const QueriesAutor = await QueriesModel.find({Autor:Usuario}).lean() //LOS QUE CREO
+        // const queriesCreadosIDs = QueriesAutor.map(query => query._id.toString());
+        // const queriesQueMeCompartieron = await QueryXUsuarioModel.find({Usuario:Usuario}).lean() //LOS QUE ME COMPARTIERON //tambien incluye los mios
 
-        const queriesTotales = [
-            ...QueriesAutor, // Los creados por el usuario
-            ...await QueriesModel.find({ _id: { $in: 
-                queriesQueMeCompartieron.map(x=>x.IDQuery).filter(x=>!queriesCreadosIDs.includes(x))
-                // .filter(x => !queriesCreadosIDs.includes(x.IDQuery)) 
-            } }).lean() // Los compartidos que no creó
-        ];
+        // const queriesTotales = [
+        //     ...QueriesAutor, // Los creados por el usuario
+        //     ...await QueriesModel.find({ _id: { $in: 
+        //         queriesQueMeCompartieron.map(x=>x.IDQuery).filter(x=>!queriesCreadosIDs.includes(x))
+        //         // .filter(x => !queriesCreadosIDs.includes(x.IDQuery)) 
+        //     } }).lean() // Los compartidos que no creó
+        // ];
 
         // console.log(queriesTotales)
 

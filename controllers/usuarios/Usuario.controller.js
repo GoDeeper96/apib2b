@@ -19,6 +19,26 @@ export const GetUsuarios = async(req,res)=>{
         res.status(500).send(getError);   
     }
 }
+export const SearchUsuario = async(req,res)=>{
+    const { UsuarioToBeSearched } = req.body
+    console.log(UsuarioToBeSearched)
+    try {
+        const UsuarioGeted = await UsuariosModel.find({Usuario:{$regex:UsuarioToBeSearched}}).lean()
+        console.log(UsuarioGeted)
+        res.json({
+            data: UsuarioGeted,
+            estado:'Success',
+            mensaje:'Ok',
+            error:null
+        })
+
+    } catch (error) {
+        console.error(error);
+        const getError = MapError(error); // Función para mapear el error
+        res.status(500).send(getError);   
+    }
+}
+
 export const CrearUsuario = async(req,res)=>{
     const { FormData } = req.body
     

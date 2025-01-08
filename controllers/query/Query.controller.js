@@ -146,6 +146,12 @@ export const CrearQuery = async (req, res) => {
           TablaOrigen:tabla_origen
       })
       await nuevoQuery.save()
+      const crearQueryUsuario = new QueryXUsuarioModel({
+        Editable:false,
+        IDQuery:nuevoQuery.id,
+        Usuario:FormData.Autor
+      })
+      await crearQueryUsuario.save()
       const crearModelo = crearEsquemaDinamico(nombre_tabla,columnas) //CREACION MODELO
       const nuevoModelo = mongoose.model(nombre_tabla,crearModelo)       
       // Agregar tarea a la cola
@@ -177,12 +183,12 @@ export const CrearQuery = async (req, res) => {
         res.status(500).send(getError);     
     }
   };
-export const AsignarQuery = async(req,res)=>{
-    const { NombreQuery,IDQuery,Usuario,Autor } = req.body
+export const AsignarQuery = async(req,res)=>{ //COMPARTIR QUERY
+    const { NombreQuery,IDQuery,Usuario,Autor,Editable } = req.body
     const nuevoPost = new EventosModel({
         Autor:Autor,
         EventoNombre:'AsignarQuery',
-        Descripcion:` Asignando ${NombreQuery}...`,
+        Descripcion:` Asignando/Compartir ${NombreQuery}...`,
         Funcion:'asignar:query',
         ConsultaPayload:JSON.stringify(req.body),
         Response:'En progreso...',
@@ -197,7 +203,8 @@ export const AsignarQuery = async(req,res)=>{
     try {
         const queryParaUsuario = new QueryXUsuarioModel({
             IDQuery:IDQuery,
-            Usuario:Usuario
+            Usuario:Usuario,
+            Editable:Editable,
         })
         await queryParaUsuario.save()
         const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');

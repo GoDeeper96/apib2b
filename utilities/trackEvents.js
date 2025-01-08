@@ -14,7 +14,7 @@ export const monitorEventos = async(io) => {
             const collectionStream = db.collection(coleccion).watch();
             
             collectionStream.on('change', (change) => {
-                console.log('Cambio detectado:', change);
+                // console.log('Cambio detectado:', change);
                 
                 if (coleccion === "eventos") {
                     //SOLO VER CAMBIOS DE USUARIOS QUE HE CREADO

@@ -15,11 +15,11 @@ const esquemaReportes = new Schema({
         required: true,
         // index: true,
     },
-    Editable:{
-        type: Boolean,
-        required: true,
-        // index: true,
-    },
+    // Editable:{
+    //     type: Boolean,
+    //     required: true,
+    //     // index: true,
+    // },
     DinamicoEstatico:{
         type: Boolean,
         required: true,
@@ -34,6 +34,10 @@ const esquemaReportes = new Schema({
         type: String,
         required: false,
         // index: true,
+    },
+    NombreQuery:{
+        type:String,
+        required:true
     },
     // FechaCreacion:{
     //     type: Date,

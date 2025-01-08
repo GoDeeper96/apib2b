@@ -4,6 +4,7 @@ export const MapError = (error)=>{
         mensaje:'Error desconocido',
         error:'Error desconocido'
     }
+    
     if(typeof error==='object')
     {
         const attr = Object.keys(error).filter(x=>x.includes(['errorResponse']))

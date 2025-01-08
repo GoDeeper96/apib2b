@@ -44,8 +44,228 @@ export const getReportesNombres = async(req,res)=>{
         res.status(500).send(getError);  
     }
 } 
+export const GetShareViewReporte = async(req,res)=>{
+    const {NombreReporte} = req.body
 
+    try {
+        let newView =[]
+        const dataReporte = await ReporteModel.findById(NombreReporte)
+        // console.log(dataReporte)
+        const data = await Reportes_UsuariosModel.find({
+            PKIDReporte:NombreReporte,
+        }).lean()
+        newView = data.map(x=>({
+            ...x,
+            Autor:dataReporte.Autor
+        }))
+        // console.log(newView)
+        res.json({
+            Data:newView,
+            estado:'Success',
+            mensaje:'Ok',
+            error:null
+        })  
+    } catch (error) {
+        const getError = MapError(error); // Función para mapear el error
+        res.status(500).send(getError);    
+    }
+}
+export const UnAssignReporte = async(req,res)=>{
+    const {Usuario,idreporte,Autor} = req.body
+    const nuevoPost = new EventosModel({
+        Autor:Autor,
+        EventoNombre:'Desasignar reporte',
+        Descripcion:`Desasignando/descompartir reporte ${idreporte}`,
+        Funcion:'descompartir:reporte',
+        ConsultaPayload:JSON.stringify(req.body),
+        Response:'En progreso...',
+        ResponseTamaño:0,
+        FechaStart:moment().format('YYYY-MM-DD hh:mm:ss'),
+        FechaEnd:null,
+        TimeSpentSec:0,
+        Status:'LOADING',
+        StatusCode:0
+    })
+    await nuevoPost.save()  
+    try {
+          const unAssigned = await Reportes_UsuariosModel.findOneAndDelete({PKIDReporte:idreporte,Usuario:Usuario})
 
+          // const pivotDataSource = getPivotDataSource(query,JSON.parse(dataRedisExisteConQuery))
+          const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
+          const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
+          const ResponseTamaño = 1;
+  
+          // Actualizar el evento con estado "DONE"
+          await EventosModel.findByIdAndUpdate(nuevoPost.id, {
+              Response: 'FormData',
+              ResponseTamaño,
+              FechaEnd,
+              TimeSpentSec,
+              Status: 'DONE',
+              StatusCode: 200
+          });
+        res.json({
+            estado:'Success',
+            mensaje:'Ok',
+            error:null
+        })  
+    } catch (error) {
+        console.error(error);
+        const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
+        const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
+        // Intentar actualizar el evento solo si fue creado exitosamente
+        if (nuevoPost && nuevoPost.id) {
+            await EventosModel.findByIdAndUpdate(nuevoPost.id, {
+                Response: JSON.stringify(error.message),
+                ResponseTamaño: JSON.stringify(error.message).length,
+                FechaEnd,
+                TimeSpentSec,
+                Status: 'ERROR',
+                StatusCode: 500
+            });
+        }
+        const getError = MapError(error); // Función para mapear el error
+        res.status(500).send(getError);     
+    }
+}
+export const EditAssignReporte = async(req,res)=>{
+    const {Usuario,IDReporte,Autor,Permisos} = req.body
+    const nuevoPost = new EventosModel({
+        Autor:Autor,
+        EventoNombre:'Editando accesos reporte',
+        Descripcion:`Editando accesos reporte ${IDReporte}`,
+        Funcion:'editar:accesos:reporte',
+        ConsultaPayload:JSON.stringify(req.body),
+        Response:'En progreso...',
+        ResponseTamaño:0,
+        FechaStart:moment().format('YYYY-MM-DD hh:mm:ss'),
+        FechaEnd:null,
+        TimeSpentSec:0,
+        Status:'LOADING',
+        StatusCode:0
+    })
+    await nuevoPost.save()  
+    try {
+
+         const editarFila = await Reportes_UsuariosModel.updateOne({
+            PKIDReporte: IDReporte,
+            Usuario: Usuario,
+          },
+          {
+            $set: { Permisos: Permisos }, // Asegura que el array se actualice explícitamente.
+          }
+         )
+         console.log(editarFila)
+         // const pivotDataSource = getPivotDataSource(query,JSON.parse(dataRedisExisteConQuery))
+         const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
+         const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
+         const ResponseTamaño = 1;
+ 
+
+         // Actualizar el evento con estado "DONE"
+         await EventosModel.findByIdAndUpdate(nuevoPost.id, {
+             Response: 'FormData',
+             ResponseTamaño,
+             FechaEnd,
+             TimeSpentSec,
+             Status: 'DONE',
+             StatusCode: 200
+         });
+       res.json({
+           estado:'Success',
+           mensaje:'Ok',
+           error:null
+       })  
+    } catch (error) {
+        console.error(error);
+        const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
+        const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
+        // Intentar actualizar el evento solo si fue creado exitosamente
+        if (nuevoPost && nuevoPost.id) {
+            await EventosModel.findByIdAndUpdate(nuevoPost.id, {
+                Response: JSON.stringify(error.message),
+                ResponseTamaño: JSON.stringify(error.message).length,
+                FechaEnd,
+                TimeSpentSec,
+                Status: 'ERROR',
+                StatusCode: 500
+            });
+        }
+        const getError = MapError(error); // Función para mapear el error
+        res.status(500).send(getError);   
+    }
+}
+export const ShareAsignReport = async(req,res)=>{
+    const { NombreReporte,
+        IDReporte,
+        Usuario,
+        Autor,
+        Permisos} = req.body
+        const nuevoPost = new EventosModel({
+            Autor:Autor,
+            EventoNombre:'CompartirReporte',
+            Descripcion:`Compartiendo reporte ${NombreReporte}`,
+            Funcion:'compartir:reporte',
+            ConsultaPayload:JSON.stringify(req.body),
+            Response:'En progreso...',
+            ResponseTamaño:0,
+            FechaStart:moment().format('YYYY-MM-DD hh:mm:ss'),
+            FechaEnd:null,
+            TimeSpentSec:0,
+            Status:'LOADING',
+            StatusCode:0
+        })
+        await nuevoPost.save()      
+    try {
+        // const getPKIDReporte= await ReporteModel.findOne({Nombre:NombreReporte})
+        const nuevoInstancia = new Reportes_UsuariosModel(
+            {
+                Permisos:Permisos,
+                Usuario:Usuario,
+                PKIDReporte:IDReporte
+            })
+        await nuevoInstancia.save()
+           
+         // const pivotDataSource = getPivotDataSource(query,JSON.parse(dataRedisExisteConQuery))
+         const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
+         const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
+         const ResponseTamaño = 1;
+ 
+         // Actualizar el evento con estado "DONE"
+         await EventosModel.findByIdAndUpdate(nuevoPost.id, {
+             Response: 'FormData',
+             ResponseTamaño,
+             FechaEnd,
+             TimeSpentSec,
+             Status: 'DONE',
+             StatusCode: 200
+         });
+       res.json({
+           estado:'Success',
+           mensaje:'Ok',
+           error:null
+       })  
+
+        
+    } catch (error) {
+        console.error(error);
+        const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
+        const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
+        // Intentar actualizar el evento solo si fue creado exitosamente
+        if (nuevoPost && nuevoPost.id) {
+            await EventosModel.findByIdAndUpdate(nuevoPost.id, {
+                Response: JSON.stringify(error.message),
+                ResponseTamaño: JSON.stringify(error.message).length,
+                FechaEnd,
+                TimeSpentSec,
+                Status: 'ERROR',
+                StatusCode: 500
+            });
+        }
+        const getError = MapError(error); // Función para mapear el error
+        res.status(500).send(getError);          
+    }
+}
 export const getReportesSolido = async(req,res)=>{
     const {PKIDReporte,Pagina} = req.body
     try {
@@ -95,10 +315,15 @@ export const getReporteQuery = async(req,res)=>{
         let repUsuarios = []
         const LlaveRepsUsuario = await Reportes_UsuariosModel.find({Usuario:Usuario}) //ids Reportes del Usuario
         for (let index = 0; index < LlaveRepsUsuario.length; index++) {
-            const repUsuario = await ReporteModel.findById(LlaveRepsUsuario[index].PKIDReporte)
-            repUsuarios.push(repUsuario)
+            if(LlaveRepsUsuario[index].Permisos.includes('Ver'))
+            {
+                const repUsuario = await ReporteModel.findById(LlaveRepsUsuario[index].PKIDReporte).lean()
+                repUsuarios.push({...repUsuario,Permisos:LlaveRepsUsuario[index].Permisos})
+            }
+           
             
         }
+        console.log(repUsuarios)
         // const dataTotal = await Reportes_UsuariosModel.find({Usuario:Usuario}).lean()
         // console.log(dataTotal)
         res.json({
@@ -167,6 +392,7 @@ export const getReporteQuery = async(req,res)=>{
 //SE DEBE ASEGURAR CON UN ROLLBACK EL SEGUNDO SAVE
 export const crearReporte = async(req,res)=>{
         const { FormData } = req.body
+        // console.log(FormData)
         // console.log(FormData)
         // console.log(req.body)
         // const nuevoPost = new EventosModel({
@@ -253,8 +479,9 @@ export const crearReporte = async(req,res)=>{
                 Descripcion:FormData.Descripcion,
                 DinamicoEstatico:FormData.DinamicoEstatico?true:false,
                 RutaImagenReporte:'',
-                Editable:FormData.Editable?true:false,
-                Autor:FormData.Usuario
+                // Editable:FormData.Editable?true:false,
+                Autor:FormData.Usuario,
+                
             })
             // const reporteUsuarioUpdate = await Reportes_UsuariosModel.findOneAndUpdate({
 
@@ -338,8 +565,9 @@ export const crearReporte = async(req,res)=>{
             Descripcion:FormData.Descripcion,
             DinamicoEstatico:FormData.DinamicoEstatico?true:false,
             RutaImagenReporte:'',
-            Editable:FormData.Editable?true:false,
-            Autor:FormData.Usuario
+            // Editable:FormData.Editable?true:false,
+            Autor:FormData.Usuario,
+            NombreQuery:FormData.NombreQuery
         })
         await reporte.save()
 
@@ -347,6 +575,7 @@ export const crearReporte = async(req,res)=>{
             // Nombre:FormData.Nombre,
             PKIDReporte:reporte.id,
             Usuario:FormData.Usuario,
+            Editable:false,
             // Favorito:FormData.Favorito,
             // Descripcion:FormData.Descripcion,
 
