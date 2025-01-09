@@ -45,7 +45,7 @@ const esquemaVentas= new Schema({
   Factor: { type: Number, required: false, index: true },
   NumPedido: { type: Number, required: false, index: true },
 });
-export default mongoose.model('90005',esquemaVentas)
+export default mongoose.model('1234',esquemaVentas)
 // const b2bventas2Model = mongoose.models['90005'] 
 //   ? mongoose.model<IVenta>('90005')
 //   : mongoose.model<IVenta>('90005', esquemaVentas);

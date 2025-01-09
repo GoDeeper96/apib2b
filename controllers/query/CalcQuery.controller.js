@@ -195,6 +195,7 @@ export const GetDataQuery = async(req,res)=>{
         res.status(500).send(getError);    
     }
 }
+
 export const GetQueriesVistaAutor = async(req,res)=>{
     const {Usuario} = req.body
     try {

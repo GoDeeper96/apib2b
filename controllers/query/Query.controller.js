@@ -147,7 +147,7 @@ export const CrearQuery = async (req, res) => {
       })
       await nuevoQuery.save()
       const crearQueryUsuario = new QueryXUsuarioModel({
-        Editable:false,
+        Permisos:['Ver'],
         IDQuery:nuevoQuery.id,
         Usuario:FormData.Autor
       })
@@ -183,6 +183,224 @@ export const CrearQuery = async (req, res) => {
         res.status(500).send(getError);     
     }
   };
+export const GetSharedViewQuery = async(req,res)=>{
+    const { idquery } = req.body
+   
+    try {
+        let newView =[]
+                const dataReporte = await QueriesModel.findById(idquery)
+                // console.log(dataReporte)
+                const data = await QueryXUsuarioModel.find({
+                    IDQuery:idquery,
+                }).lean()
+                newView = data.map(x=>({
+                    ...x,
+                    Autor:dataReporte.Autor
+                }))
+                // console.log(newView)
+                res.json({
+                    Data:newView,
+                    estado:'Success',
+                    mensaje:'Ok',
+                    error:null
+                })  
+    } catch (error) {
+       
+        const getError = MapError(error); // Función para mapear el error
+        res.status(500).send(getError);  
+    }
+}
+export const ShareQuery = async(req,res)=>{
+    const {NombreQuery,IDQuery,Usuario,Autor,Editable } = req.body
+    const nuevoPost = new EventosModel({
+        Autor:Autor,
+        EventoNombre:'ShareQuery',
+        Descripcion:` Compartir ${NombreQuery}...`,
+        Funcion:'compartir:query',
+        ConsultaPayload:JSON.stringify(req.body),
+        Response:'En progreso...',
+        ResponseTamaño:0,
+        FechaStart:moment().format('YYYY-MM-DD hh:mm:ss'),
+        FechaEnd:null,
+        TimeSpentSec:0,
+        Status:'LOADING',
+        StatusCode:0
+    })
+    await nuevoPost.save()
+    try {
+        const queryParaUsuario = new QueryXUsuarioModel({
+            IDQuery:IDQuery,
+            Usuario:Usuario,
+            Permisos:['Usar'],
+        })
+        await queryParaUsuario.save()
+        const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
+        const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
+        const ResponseTamaño = 1;
+        await EventosModel.findByIdAndUpdate(nuevoPost.id, {
+            Response: 'FormData',
+            ResponseTamaño,
+            FechaEnd,
+            TimeSpentSec,
+            Status: 'DONE',
+            StatusCode: 200
+        });
+    } catch (error) {
+        console.log(error)
+        console.error(error);
+        const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
+        const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
+        // Intentar actualizar el evento solo si fue creado exitosamente
+        if (nuevoPost && nuevoPost.id) {
+            await EventosModel.findByIdAndUpdate(nuevoPost.id, {
+                Response: JSON.stringify(error.message),
+                ResponseTamaño: JSON.stringify(error.message).length,
+                FechaEnd,
+                TimeSpentSec,
+                Status: 'ERROR',
+                StatusCode: 500
+            });
+        }
+        const getError = MapError(error); // Función para mapear el error
+        res.status(500).send(getError);     
+    }
+}
+export const UnshareQuery = async(req,res)=>{
+    const { NombreQuery,IDQuery,Usuario,Autor,Editable } = req.body
+    const nuevoPost = new EventosModel({
+        Autor:Autor,
+        EventoNombre:'DescompartirQuery',
+        Descripcion:` Descompartir ${NombreQuery}...`,
+        Funcion:'descompartir:query',
+        ConsultaPayload:JSON.stringify(req.body),
+        Response:'En progreso...',
+        ResponseTamaño:0,
+        FechaStart:moment().format('YYYY-MM-DD hh:mm:ss'),
+        FechaEnd:null,
+        TimeSpentSec:0,
+        Status:'LOADING',
+        StatusCode:0
+    })
+    await nuevoPost.save()
+    try {
+        const unAssigned = await QueryXUsuarioModel.findOneAndDelete({IDQuery:IDQuery,Usuario:Usuario}) //USUARIO AL CUAL LE VAS A DESASIGNAR
+        // const queryParaUsuario = new QueryXUsuarioModel({
+        //     IDQuery:IDQuery,
+        //     Usuario:Usuario,
+        //     Permisos:['Usar'],
+        // })
+        // await queryParaUsuario.save()
+        const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
+        const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
+        const ResponseTamaño = 1;
+        // const sendNotificacion = new NotificacionesModel({
+        //     Usuario:FormData.Autor,
+        //     Mensaje:'El nuevo query ha sido asignado correctamente',
+        //     Tipo:'Carga'
+        // })
+        // sendNotificacion.save()
+        // Actualizar el evento con estado "DONE"
+        await EventosModel.findByIdAndUpdate(nuevoPost.id, {
+            Response: 'FormData',
+            ResponseTamaño,
+            FechaEnd,
+            TimeSpentSec,
+            Status: 'DONE',
+            StatusCode: 200
+        });
+        res.json({
+            estado:'Success',
+            mensaje:'Ok',
+            error:null
+        })
+    } catch (error) {
+        console.log(error)
+        console.error(error);
+        const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
+        const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
+        // Intentar actualizar el evento solo si fue creado exitosamente
+        if (nuevoPost && nuevoPost.id) {
+            await EventosModel.findByIdAndUpdate(nuevoPost.id, {
+                Response: JSON.stringify(error.message),
+                ResponseTamaño: JSON.stringify(error.message).length,
+                FechaEnd,
+                TimeSpentSec,
+                Status: 'ERROR',
+                StatusCode: 500
+            });
+        }
+        const getError = MapError(error); // Función para mapear el error
+        res.status(500).send(getError);      
+    }
+}
+// export const UnassignQuery = async(req,res)=>{
+//     const { NombreQuery,IDQuery,Usuario,Autor,Editable } = req.body
+//     const nuevoPost = new EventosModel({
+//         Autor:Autor,
+//         EventoNombre:'DesasignandoQuery',
+//         Descripcion:` Desasignar ${NombreQuery}...`,
+//         Funcion:'desasignar:query',
+//         ConsultaPayload:JSON.stringify(req.body),
+//         Response:'En progreso...',
+//         ResponseTamaño:0,
+//         FechaStart:moment().format('YYYY-MM-DD hh:mm:ss'),
+//         FechaEnd:null,
+//         TimeSpentSec:0,
+//         Status:'LOADING',
+//         StatusCode:0
+//     })
+//     await nuevoPost.save()
+//     try {
+//         // const queryParaUsuario = new QueryXUsuarioModel({
+//         //     IDQuery:IDQuery,
+//         //     Usuario:Usuario,
+//         //     Permisos:['Usar'],
+//         // })
+//         // await queryParaUsuario.save()
+//         const unAssigned = await QueryXUsuarioModel.findOneAndDelete({IDQuery:IDQuery,Usuario:Usuario})
+//         const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
+//         const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
+//         const ResponseTamaño = 1;
+//         // const sendNotificacion = new NotificacionesModel({
+//         //     Usuario:FormData.Autor,
+//         //     Mensaje:'El nuevo query ha sido asignado correctamente',
+//         //     Tipo:'Carga'
+//         // })
+//         // sendNotificacion.save()
+//         // Actualizar el evento con estado "DONE"
+//         await EventosModel.findByIdAndUpdate(nuevoPost.id, {
+//             Response: 'FormData',
+//             ResponseTamaño,
+//             FechaEnd,
+//             TimeSpentSec,
+//             Status: 'DONE',
+//             StatusCode: 200
+//         });
+//         res.json({
+//             estado:'Success',
+//             mensaje:'Ok',
+//             error:null
+//         })
+//     } catch (error) {
+//         console.log(error)
+//         console.error(error);
+//         const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
+//         const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
+//         // Intentar actualizar el evento solo si fue creado exitosamente
+//         if (nuevoPost && nuevoPost.id) {
+//             await EventosModel.findByIdAndUpdate(nuevoPost.id, {
+//                 Response: JSON.stringify(error.message),
+//                 ResponseTamaño: JSON.stringify(error.message).length,
+//                 FechaEnd,
+//                 TimeSpentSec,
+//                 Status: 'ERROR',
+//                 StatusCode: 500
+//             });
+//         }
+//         const getError = MapError(error); // Función para mapear el error
+//         res.status(500).send(getError);      
+//     }
+// }
 export const AsignarQuery = async(req,res)=>{ //COMPARTIR QUERY
     const { NombreQuery,IDQuery,Usuario,Autor,Editable } = req.body
     const nuevoPost = new EventosModel({
@@ -204,7 +422,7 @@ export const AsignarQuery = async(req,res)=>{ //COMPARTIR QUERY
         const queryParaUsuario = new QueryXUsuarioModel({
             IDQuery:IDQuery,
             Usuario:Usuario,
-            Editable:Editable,
+            Permisos:['Usar'],
         })
         await queryParaUsuario.save()
         const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
@@ -250,7 +468,30 @@ export const AsignarQuery = async(req,res)=>{ //COMPARTIR QUERY
         res.status(500).send(getError);      
     }
 }
-
+// export const EditarQuery = async(req,res)=>{
+//     const { FormData } = req.body
+//     try {
+        
+//     } catch (error) {
+//         console.log(error)
+//         console.error(error);
+//         const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
+//         const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
+//         // Intentar actualizar el evento solo si fue creado exitosamente
+//         if (nuevoPost && nuevoPost.id) {
+//             await EventosModel.findByIdAndUpdate(nuevoPost.id, {
+//                 Response: JSON.stringify(error.message),
+//                 ResponseTamaño: JSON.stringify(error.message).length,
+//                 FechaEnd,
+//                 TimeSpentSec,
+//                 Status: 'ERROR',
+//                 StatusCode: 500
+//             });
+//         }
+//         const getError = MapError(error); // Función para mapear el error
+//         res.status(500).send(getError);  
+//     }
+// }
 export const DeleteQuery = async(req,res)=>{
     const {IDQuery,Autor,AutorQuery,NombreQuery,Usuario } = req.body
     const nuevoPost = new EventosModel({
@@ -355,7 +596,7 @@ export const PrevisualizarData = async(req,res)=>{
         let tamaño = 0
         if(existeEnCache)
         {
-            resultado = await mongoose.model('90005').aggregate([
+            resultado = await mongoose.model('1234').aggregate([
                 { $match: JSON.parse(QueryTable) },
                 { $project: obj },
                 {
@@ -371,7 +612,7 @@ export const PrevisualizarData = async(req,res)=>{
         }
         else{
 
-            resultado = await mongoose.model('90005').aggregate([
+            resultado = await mongoose.model('1234').aggregate([
                 { $match: JSON.parse(QueryTable) },
                 { $project: obj },
                 {

@@ -575,7 +575,7 @@ export const crearReporte = async(req,res)=>{
             // Nombre:FormData.Nombre,
             PKIDReporte:reporte.id,
             Usuario:FormData.Usuario,
-            Editable:false,
+            Permisos:['Ver','Editar']
             // Favorito:FormData.Favorito,
             // Descripcion:FormData.Descripcion,
 
@@ -665,9 +665,11 @@ export const deleteReporte = async(req,res)=>{
         const rep1 = await Reportes_UsuariosModel.deleteMany({
             PKIDReporte:idreporte
         })
-        const rep2 = await Reportes_UsuariosModel.deleteMany({
-            PKIDReporte:idreporte
-        })
+        const paginasEliminadas = await PaginaReportesModel.deleteMany({PKIDReporte:idreporte})
+
+        // const rep2 = await Reportes_UsuariosModel.deleteMany({
+        //     PKIDReporte:idreporte
+        // })
           // const pivotDataSource = getPivotDataSource(query,JSON.parse(dataRedisExisteConQuery))
           const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
           const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
