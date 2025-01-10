@@ -227,6 +227,144 @@ export function runDynamicQuery6_actual(query) {
   
     return pipeline;
   }
+export function generateClickhouseQueryv2(query) {
+    const { rows, columns, values, filters } = query;
+  
+    // Construir el SELECT para las filas y columnas
+    const selectFields = [...rows, ...columns];
+  
+    // Agregar las operaciones de valores
+    const valueFields = [];
+    let percentageField = null;
+    let percentageOperation = null;
+  
+    Object.entries(values).forEach(([key, value]) => {
+      const operation = value.operation.toUpperCase();
+      const distinct = value.distinct ? 'DISTINCT ' : '';
+  
+      if (operation === 'PERCENTAGE') {
+        percentageField = key;
+        percentageOperation = `SUM(${distinct}${key})`; // Suponemos que es un SUM
+        valueFields.push(`${operation}(${distinct}${key}) AS ${key}`);
+      } else if (operation === 'SUM' || operation === 'AVG' || operation === 'MIN' || operation === 'MAX') {
+        valueFields.push(`${operation}(${distinct}${key}) AS ${key}`);
+      } else if (operation === 'COUNT') {
+        valueFields.push(`COUNT(${distinct}${key}) AS ${key}`);
+      } else {
+        throw new Error(`Operación no soportada: ${operation}`);
+      }
+    });
+  
+    // Construir el WHERE con los filtros
+    const whereConditions = [];
+    if (filters) {
+      Object.entries(filters).forEach(([key, condition]) => {
+        if (condition.$in) {
+          const inValues = condition.$in.map(val => `'${val}'`).join(', ');
+          whereConditions.push(`${key} IN (${inValues})`);
+        }
+      });
+    }
+  
+    // Construir el GROUP BY
+    const groupByFields = [...rows, ...columns];
+  
+    // Generar la consulta principal
+    const sqlQuery = `
+      SELECT
+        ${selectFields.join(', ')},
+        ${valueFields.join(', ')}
+      FROM
+        your_table_name
+      ${whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : ''}
+      ${groupByFields.length > 0 ? `GROUP BY ${groupByFields.join(', ')}` : ''}
+    `.trim();
+  
+    // Si hay un cálculo de porcentaje, encapsular en una subconsulta
+    if (percentageField) {
+      const percentageQuery = `
+        SELECT
+          *,
+          (${percentageOperation} / total_sum) * 100 AS ${percentageField}_percentage
+        FROM (
+          SELECT
+            ${selectFields.join(', ')},
+            ${valueFields.join(', ')},
+            SUM(${percentageField}) AS total_sum
+          FROM
+            your_table_name
+          ${whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : ''}
+          ${groupByFields.length > 0 ? `GROUP BY ${groupByFields.join(', ')}` : ''}
+        ) AS subquery
+      `.trim();
+      return percentageQuery;
+    }
+  
+    return sqlQuery;
+  }
+  
+  // Ejemplo de uso
+  const query = {
+    rows: ["FuerzaVentas"],
+    columns: ["GrupoVentas"],
+    values: {
+      ValorVenta: { operation: "SUM", distinct: false },
+      PorcentajeVenta: { operation: "PERCENTAGE", distinct: false }
+    },
+    filters: {
+      Canal: { $in: ["CALLCENTER", "COBERTURA", "MAYORISTA", "MERCADOS", "OFICINA"] }
+    }
+  };
+export function generateClickhouseQuery(query) {
+    // Extraer los elementos de la consulta
+    const { rows, columns, values, filters } = query;
+  
+    // Construir el SELECT
+    const selectFields = [];
+    rows.forEach(row => selectFields.push(row));
+    columns.forEach(column => selectFields.push(column));
+  
+    // Agregar las operaciones de valores
+    Object.entries(values).forEach(([key, value]) => {
+      const operation = value.operation.toUpperCase();
+      const distinct = value.distinct ? 'DISTINCT ' : '';
+      if (operation === 'SUM' || operation === 'AVG' || operation === 'MIN' || operation === 'MAX') {
+        selectFields.push(`${operation}(${distinct}${key}) AS ${key}`);
+      } else if (operation === 'COUNT') {
+        selectFields.push(`COUNT(${distinct}${key}) AS ${key}`);
+      } else {
+        throw new Error(`Operación no soportada: ${operation}`);
+      }
+    });
+  
+    // Construir el WHERE con los filtros
+    const whereConditions = [];
+    if (filters) {
+      Object.entries(filters).forEach(([key, condition]) => {
+        if (condition.$in) {
+          const inValues = condition.$in.map(val => `'${val}'`).join(', ');
+          whereConditions.push(`${key} IN (${inValues})`);
+        }
+        // Agrega más operadores si es necesario ($eq, $ne, $gt, etc.)
+      });
+    }
+  
+    // Construir el GROUP BY
+    const groupByFields = [...rows, ...columns];
+  
+    // Combinar todo para generar la consulta
+    const sqlQuery = `
+      SELECT
+        ${selectFields.join(', ')}
+      FROM
+        your_table_name
+      ${whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : ''}
+      ${groupByFields.length > 0 ? `GROUP BY ${groupByFields.join(', ')}` : ''}
+    `.trim();
+  
+    return sqlQuery;
+  }
+  
 export const AddTest = async()=>{
     const data = new TestModel({
       Test:'hola'
