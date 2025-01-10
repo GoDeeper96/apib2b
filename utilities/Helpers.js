@@ -275,7 +275,7 @@ export function generateClickhouseQueryv2(query) {
         ${selectFields.join(', ')},
         ${valueFields.join(', ')}
       FROM
-        your_table_name
+        ventas_b2b
       ${whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : ''}
       ${groupByFields.length > 0 ? `GROUP BY ${groupByFields.join(', ')}` : ''}
     `.trim();
@@ -292,7 +292,7 @@ export function generateClickhouseQueryv2(query) {
             ${valueFields.join(', ')},
             SUM(${percentageField}) AS total_sum
           FROM
-            your_table_name
+            ventas_b2b
           ${whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : ''}
           ${groupByFields.length > 0 ? `GROUP BY ${groupByFields.join(', ')}` : ''}
         ) AS subquery
