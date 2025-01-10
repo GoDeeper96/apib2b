@@ -14,6 +14,7 @@ import { ExpressAdapter } from '@bull-board/express'
 import { Classic } from './utilities/CreatingUser.js'
 import { actualizarAdmin, AddFirstQuery, AddTest } from './utilities/Helpers.js'
 import { cargaQueue } from './jobs/cargaQueue.CrearQuery.js'
+import { createClient } from '@clickhouse/client'
 const app = express();
 
 const serverAdapter = new ExpressAdapter();
