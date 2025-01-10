@@ -43,73 +43,31 @@ export const Calculo = async(req,res)=>{
       };
         const sd = await InitClientRedisOther().connect()
         console.log(JSON.stringify(query))
-        const dnuew = generateClickhouseQueryv2(query)
-        // console.log(dnuew)
-        const result = await clickhouse.query({
-            query:dnuew,
-            format:'JSONEachRow'
-        });
-        console.log(result)
-        
-        const pivotDataSource = getPivotDataSource(query,result)
-        // const dataRedisExisteConQuery = await sd.v4.GET(`${JSON.stringify(query)}`)
-        // console.log(dataRedisExisteConQuery)
-        // if(!dataRedisExisteConQuery)
-        // {
-        //     const Pipelina = runDynamicQuery6_actual(query)
-          
-        //     const FiltracionMaxima = await B2bModeloModel.aggregate(Pipelina)
-        //     if(FiltracionMaxima.length!==0)
-        //     {
-              
-        //       await sd.set(`${JSON.stringify(query)}`,JSON.stringify(FiltracionMaxima))
-        //     }
-        //     console.time('TIEMPOCALCULO')
-        //     const pivotDataSource = getPivotDataSource(query,FiltracionMaxima)
-        //     // console.log(FiltracionMaxima)
-        //     console.timeEnd('TIEMPOCALCULO')
-        // const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
-        // const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
-        // const ResponseTamaño = JSON.stringify(pivotDataSource).length;
-
-        // // Actualizar el evento con estado "DONE"
-        // await EventosModel.findByIdAndUpdate(nuevoPost.id, {
-        //     Response: 'pivotDataSource-pipeline',
-        //     ResponseTamaño,
-        //     FechaEnd,
-        //     TimeSpentSec,
-        //     Status: 'DONE',
-        //     StatusCode: 200
+        // const dnuew = generateClickhouseQueryv2(query)
+        // // console.log(dnuew)
+        // const result = await clickhouse.query({
+        //     query:dnuew,
+        //     format:'JSONEachRow'
         // });
+        // console.log(result)
 
-        //     res.status(200).json({
-        //         pivotDataSource:{...pivotDataSource,PanelFiltros},
-        //         pipeline:Pipelina
-        //     })
-        // }
-        // else{
-        //   const pivotDataSource = getPivotDataSource(query,JSON.parse(dataRedisExisteConQuery))
-        //   const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
-        //   const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
-        //   const ResponseTamaño = JSON.stringify(pivotDataSource).length;
-  
-        //   // Actualizar el evento con estado "DONE"
-        //   await EventosModel.findByIdAndUpdate(nuevoPost.id, {
-        //       Response: 'pivotDataSource-pipeline',
-        //       ResponseTamaño,
-        //       FechaEnd,
-        //       TimeSpentSec,
-        //       Status: 'DONE',
-        //       StatusCode: 200
-        //   });
-        //   res.status(200).json(
-        //     {
-        //     pivotDataSource:{...pivotDataSource,PanelFiltros},
-        //     pipeline:{}
-        //     }
-        // )
-        // }
-    
+        const pivotDataSource = getPivotDataSource(query,result)
+        const dataRedisExisteConQuery = await sd.v4.GET(`${JSON.stringify(query)}`)
+        console.log(dataRedisExisteConQuery)
+        if(!dataRedisExisteConQuery)
+        {
+            const Pipelina = runDynamicQuery6_actual(query)
+          
+            const FiltracionMaxima = await B2bModeloModel.aggregate(Pipelina)
+            if(FiltracionMaxima.length!==0)
+            {
+              
+              await sd.set(`${JSON.stringify(query)}`,JSON.stringify(FiltracionMaxima))
+            }
+            console.time('TIEMPOCALCULO')
+            const pivotDataSource = getPivotDataSource(query,FiltracionMaxima)
+            // console.log(FiltracionMaxima)
+            console.timeEnd('TIEMPOCALCULO')
         const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
         const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
         const ResponseTamaño = JSON.stringify(pivotDataSource).length;
@@ -126,8 +84,50 @@ export const Calculo = async(req,res)=>{
 
             res.status(200).json({
                 pivotDataSource:{...pivotDataSource,PanelFiltros},
-                pipeline:''
+                pipeline:Pipelina
             })
+        }
+        else{
+          const pivotDataSource = getPivotDataSource(query,JSON.parse(dataRedisExisteConQuery))
+          const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
+          const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
+          const ResponseTamaño = JSON.stringify(pivotDataSource).length;
+  
+          // Actualizar el evento con estado "DONE"
+          await EventosModel.findByIdAndUpdate(nuevoPost.id, {
+              Response: 'pivotDataSource-pipeline',
+              ResponseTamaño,
+              FechaEnd,
+              TimeSpentSec,
+              Status: 'DONE',
+              StatusCode: 200
+          });
+          res.status(200).json(
+            {
+            pivotDataSource:{...pivotDataSource,PanelFiltros},
+            pipeline:{}
+            }
+        )
+        }
+    
+        // const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
+        // const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
+        // const ResponseTamaño = JSON.stringify(pivotDataSource).length;
+
+        // // Actualizar el evento con estado "DONE"
+        // await EventosModel.findByIdAndUpdate(nuevoPost.id, {
+        //     Response: 'pivotDataSource-pipeline',
+        //     ResponseTamaño,
+        //     FechaEnd,
+        //     TimeSpentSec,
+        //     Status: 'DONE',
+        //     StatusCode: 200
+        // });
+
+        //     res.status(200).json({
+        //         pivotDataSource:{...pivotDataSource,PanelFiltros},
+        //         pipeline:''
+        //     })
 
         } catch (error) {
 

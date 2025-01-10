@@ -33,7 +33,7 @@ export const initializeSocket = (server) => {
 export const connectDb= async(io)=>{
     try {
         
-        const adqw = mongoose.connect(`mongodb://127.0.0.1:27017/analytics-b2b?appName=mongosh+2.1.4`)
+        const adqw = mongoose.connect(`mongodb://127.0.0.1:27017/b2bmirko?appName=mongosh+2.1.4`)
         // console.log(adqw.models)
         monitorEventos(io)
         // window.localStorage.setItem("roasts", adqw.models);
