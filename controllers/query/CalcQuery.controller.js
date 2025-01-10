@@ -124,7 +124,7 @@ export const Calculo = async(req,res)=>{
 
             res.status(200).json({
                 pivotDataSource:{...pivotDataSource,PanelFiltros},
-                pipeline:Pipelina
+                pipeline:''
             })
 
         } catch (error) {
