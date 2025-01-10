@@ -49,6 +49,8 @@ export const Calculo = async(req,res)=>{
             query:dnuew,
             format:'JSONEachRow'
         });
+        console.log(result)
+        
         const pivotDataSource = getPivotDataSource(query,result)
         // const dataRedisExisteConQuery = await sd.v4.GET(`${JSON.stringify(query)}`)
         // console.log(dataRedisExisteConQuery)
