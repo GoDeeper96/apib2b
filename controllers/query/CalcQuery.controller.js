@@ -326,7 +326,7 @@ export const GetTablasUsuario = async(req,res)=>{
             const existeTabla = await QueriesModel.findById(tablasUsuarios[index].IDQuery)
             if(existeTabla)
             {
-                TablasUsuario.push(existeTabla.Nombre)
+                TablasUsuario.push(existeTabla.TablaOrigen)
             }  
         }
         return res.json({
