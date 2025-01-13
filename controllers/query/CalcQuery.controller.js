@@ -326,7 +326,7 @@ export const GetTablasUsuario = async(req,res)=>{
             const existeTabla = await QueriesModel.findById(tablasUsuarios[index].IDQuery)
             if(existeTabla)
             {
-                TablasUsuario.push(existeTabla.TablaOrigen)
+                TablasUsuario.push(existeTabla.Nombre)
             }  
         }
         return res.json({
@@ -349,6 +349,7 @@ export const GetColumnasPorTabla = async(req,res)=>{
     const {Nombre} = req.body
     try {
         const columnasTabla = await QueriesModel.findOne({Nombre:Nombre})
+        
         return res.json({
             Data:JSON.parse(columnasTabla.Columnas),
             estado:'Success',
