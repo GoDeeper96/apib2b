@@ -7,6 +7,7 @@ import LicenciasXUsuarios from '../models/LicenciasXUsuarios.js'
 import LicenciasXFunciones from '../models/LicenciasXFunciones.js'
 import ReporteModel from '../models/Reporte.model.js'
 import QueriesModel from '../models/Queries.model.js'
+import Reportes_UsuariosModel from '../models/Reportes_Usuarios.model.js'
 
 
 export const protect = asyncHandler(async (req, res, next) => {
@@ -198,6 +199,7 @@ export const CheckAccess = asyncHandler(async(req,res,next)=>{
     try {
       const licenciaUsuario = await LicenciasXUsuarios.findOne({Usuario:FormData.Autor})
         const Accesos = await LicenciasXFunciones.find({IDLicencia:licenciaUsuario.IDLicencia}).lean()
+        console.log(Accesos)
         if(Accesos.some(x=>x.Permiso===Permiso)) //primer filtro
         {
           next()
@@ -219,6 +221,31 @@ export const CheckAccess = asyncHandler(async(req,res,next)=>{
     }
     
 
+})
+export const CheckIFEditReporte = asyncHandler(async(req,res,next)=>{
+  const { FormData } = req.body
+  const {PKIDReporte,Autor} = FormData
+  try {
+    const autorTienePermisoParaEditarReporte = await Reportes_UsuariosModel.findOne({PKIDReporte:PKIDReporte,Usuario:Autor})
+    console.log(autorTienePermisoParaEditarReporte)
+    if(autorTienePermisoParaEditarReporte.Permisos.includes('Editar'))
+    {
+      next()
+    }
+    else{
+      return res.status(500).json({
+        mensaje:'No esta autorizado para realizar esta accion.',
+        error:'Error:Autorizacion',
+        estado:'Error',
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      mensaje:'No esta autorizado para realizar esta accion.',
+      error:'Error:Autorizacion',
+      estado:'Error',
+    });
+  }
 })
 export const CheckDeleteQuery = asyncHandler(async(req,res,next)=>{ //PARA OTROS QUE NO SEA CREAR
   //deletes - solo un autor puede eliminar

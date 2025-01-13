@@ -41,18 +41,20 @@ export const Calculo = async(req,res)=>{
           columns: Columnas,
           values: Valores,
           filters: Filtros
-      };
-        const sd = await InitClientRedisOther().connect()
-        console.log(JSON.stringify(query))
+       };
+        // const sd = await InitClientRedisOther().connect()
+        
         const dnuew = generateClickhouseQueryv2(query)
-        // console.log(dnuew)
+        // // console.log(dnuew)
         const result = await clickhouse.query({
             query:dnuew,
             format:'JSONEachRow'
         })
-        console.log('Result: ', await result.json())
+        const res2 = await result.json()
+        // console.log('Result: ', await result.json())
 
-        const pivotDataSource = getPivotDataSource(query,await result.json())
+        const pivotDataSource = getPivotDataSource(query,res2)
+        // const Pipelina = runDynamicQuery6_actual(query)
         // const dataRedisExisteConQuery = await sd.v4.GET(`${JSON.stringify(query)}`)
         // console.log(dataRedisExisteConQuery)
         // if(!dataRedisExisteConQuery)
@@ -69,48 +71,6 @@ export const Calculo = async(req,res)=>{
         //     const pivotDataSource = getPivotDataSource(query,FiltracionMaxima)
         //     // console.log(FiltracionMaxima)
         //     console.timeEnd('TIEMPOCALCULO')
-        // const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
-        // const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
-        // const ResponseTamaño = JSON.stringify(pivotDataSource).length;
-
-        // // Actualizar el evento con estado "DONE"
-        // await EventosModel.findByIdAndUpdate(nuevoPost.id, {
-        //     Response: 'pivotDataSource-pipeline',
-        //     ResponseTamaño,
-        //     FechaEnd,
-        //     TimeSpentSec,
-        //     Status: 'DONE',
-        //     StatusCode: 200
-        // });
-
-        //     res.status(200).json({
-        //         pivotDataSource:{...pivotDataSource,PanelFiltros},
-        //         pipeline:Pipelina
-        //     })
-        // }
-        // else{
-        //   const pivotDataSource = getPivotDataSource(query,JSON.parse(dataRedisExisteConQuery))
-        //   const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
-        //   const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
-        //   const ResponseTamaño = JSON.stringify(pivotDataSource).length;
-  
-        //   // Actualizar el evento con estado "DONE"
-        //   await EventosModel.findByIdAndUpdate(nuevoPost.id, {
-        //       Response: 'pivotDataSource-pipeline',
-        //       ResponseTamaño,
-        //       FechaEnd,
-        //       TimeSpentSec,
-        //       Status: 'DONE',
-        //       StatusCode: 200
-        //   });
-        //   res.status(200).json(
-        //     {
-        //     pivotDataSource:{...pivotDataSource,PanelFiltros},
-        //     pipeline:{}
-        //     }
-        // )
-        // }
-    
         const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
         const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
         const ResponseTamaño = JSON.stringify(pivotDataSource).length;
@@ -127,8 +87,52 @@ export const Calculo = async(req,res)=>{
 
             res.status(200).json({
                 pivotDataSource:{...pivotDataSource,PanelFiltros},
-                pipeline:''
+                pipeline:dnuew
             })
+        
+        // else{
+        //     const Pipelina = runDynamicQuery6_actual(query)
+        //   const pivotDataSource = getPivotDataSource(query,JSON.parse(dataRedisExisteConQuery))
+
+        //   const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
+        //   const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
+        //   const ResponseTamaño = JSON.stringify(pivotDataSource).length;
+  
+        //   // Actualizar el evento con estado "DONE"
+        //   await EventosModel.findByIdAndUpdate(nuevoPost.id, {
+        //       Response: 'pivotDataSource-pipeline',
+        //       ResponseTamaño,
+        //       FechaEnd,
+        //       TimeSpentSec,
+        //       Status: 'DONE',
+        //       StatusCode: 200
+        //   });
+        //   res.status(200).json(
+        //     {
+        //     pivotDataSource:{...pivotDataSource,PanelFiltros},
+        //     pipeline:Pipelina
+        //     }
+        // )
+        // }
+    
+        // const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
+        // const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
+        // const ResponseTamaño = JSON.stringify(pivotDataSource).length;
+
+        // // Actualizar el evento con estado "DONE"
+        // await EventosModel.findByIdAndUpdate(nuevoPost.id, {
+        //     Response: 'pivotDataSource-pipeline',
+        //     ResponseTamaño,
+        //     FechaEnd,
+        //     TimeSpentSec,
+        //     Status: 'DONE',
+        //     StatusCode: 200
+        // });
+
+        //     res.status(200).json({
+        //         pivotDataSource:{...pivotDataSource,PanelFiltros},
+        //         pipeline:''
+        //     })
 
         } catch (error) {
 

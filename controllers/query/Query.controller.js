@@ -11,6 +11,8 @@ import NotificacionesModel from "../../models/Notificaciones.model.js";
 import moment from "moment";
 import QueryXUsuarioModel from "../../models/QueryXUsuario.model.js";
 import { cargaQueue } from "../../jobs/cargaQueue.CrearQuery.js";
+import { buildSQLQuery } from "../../utilities/ConversionFromTableToSQL.js";
+import { clickhouse } from "../../connections/clickhousedb.js";
 
 // export const CrearQuery = async(req,res)=>{
 //     const { FormData }  = req.body
@@ -548,19 +550,21 @@ export const DeleteQuery = async(req,res)=>{
     }
 }
 export const ConvertirTable2Json = async(req,res)=>{
-    const {QueryTable} = req.body
+    const {QueryTable,Tabla} = req.body
     console.log(QueryTable)
+    // console.log(JSON.stringify(QueryTable))
     try {
         let bd ={}
+        let ahoraQuery = ''
         if(QueryTable&&Array.isArray(QueryTable)&&QueryTable.length!==0)
         {
-             bd = buildAggregationPipeline(QueryTable)
+            //  bd = buildAggregationPipeline(QueryTable)
+             ahoraQuery = buildSQLQuery(QueryTable,Tabla)
         }
-      
-       console.log('qwdqw')
-       console.log(bd)
+        console.log(ahoraQuery)
+     
        res.json({
-        Data:JSON.stringify(bd),
+        Data:bd,
         estado:'Success',
         mensaje:'Ok',
         error:null
@@ -596,7 +600,7 @@ export const PrevisualizarData = async(req,res)=>{
         let tamaño = 0
         if(existeEnCache)
         {
-            resultado = await mongoose.model('1234').aggregate([
+            resultado = await mongoose.model('90005').aggregate([
                 { $match: JSON.parse(QueryTable) },
                 { $project: obj },
                 {
@@ -612,7 +616,7 @@ export const PrevisualizarData = async(req,res)=>{
         }
         else{
 
-            resultado = await mongoose.model('1234').aggregate([
+            resultado = await mongoose.model('90005').aggregate([
                 { $match: JSON.parse(QueryTable) },
                 { $project: obj },
                 {
@@ -650,6 +654,68 @@ export const PrevisualizarData = async(req,res)=>{
         console.log(error)
         const getError = MapError(error); // Función para mapear el error
         res.status(500).send(getError); 
+    }
+}
+export const PrevisualizarDataSql = async(req,res)=>{
+    const { QueryTable,tabla_origen,Columnas } = req.body
+    const { start, size, filters, sorting, globalFilter } = req.query 
+    const GlobalFilter = globalFilter
+    const Filtros = JSON.parse(filters)
+    // console.log(GlobalFilter.length)
+    const page = parseInt(start)
+    const limit = parseInt(size)
+    const offset = page*limit
+    console.log(sorting)
+    try {
+        const columnList = Columnas.length > 0 ? Columnas.toString() : '*';
+        const junteQuery = `select ${columnList} from ${tabla_origen&&tabla_origen!==''?tabla_origen:'ventas_b2b'} ${QueryTable} `
+        const existeEnCache = await ConsultaPaginacionCacheModel.findOne({QueryString:junteQuery})
+        let resultado =[]
+        let tamaño = 0
+        if(existeEnCache)
+        {
+            const queryReal = `select ${columnList} from ${tabla_origen&&tabla_origen!==''?tabla_origen:'ventas_b2b'} ${QueryTable} LIMIT ${limit} OFFSET ${offset} `
+      
+            const res  = await clickhouse.query({
+                query: queryReal,
+                format: 'JSONEachRow',
+            });
+            resultado = await res.json()
+            tamaño = existeEnCache.TamañoTotal
+        }
+        if(!existeEnCache){
+            const queryReal = `select ${columnList} from ${tabla_origen&&tabla_origen!==''?tabla_origen:'ventas_b2b'} ${QueryTable} LIMIT ${limit} OFFSET ${offset} `
+            const queryCount = `select COUNT(*) AS total from ${tabla_origen&&tabla_origen!==''?tabla_origen:'ventas_b2b'} ${QueryTable}`
+            const res  = await clickhouse.query({
+                query: queryReal,
+                format: 'JSONEachRow',
+            });
+            const countRes  = await clickhouse.query({
+                query: queryCount,
+                format: 'JSONEachRow',
+            });
+            const preTamaño = await countRes.json()
+            tamaño = preTamaño[0].total 
+            resultado = await res.json()
+            if (resultado&&tamaño&&resultado.length&&tamaño>0) {
+                const nuevoCache = new ConsultaPaginacionCacheModel({
+                    QueryString: junteQuery,
+                    TamañoTotal: tamaño,
+                });
+                await nuevoCache.save();
+            }
+        }
+        res.json({
+            Data:resultado.length>0?resultado:[],
+            Tamaño:tamaño,
+            estado:'Success',
+            mensaje:'Ok',
+            error:null
+        })
+    } catch (error) {
+        console.log(error)
+        const getError = MapError(error); // Función para mapear el error
+        res.status(500).send(getError);     
     }
 }
 export const testing = async(req,res)=>{

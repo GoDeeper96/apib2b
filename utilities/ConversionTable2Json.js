@@ -195,3 +195,4 @@ export function buildAggregationPipeline(rules) {
 
     return { [logicalOperator]: mainQuery };
 }
+

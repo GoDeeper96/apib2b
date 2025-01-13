@@ -7,7 +7,7 @@ const esquemaReportes = new Schema({
     Nombre:{
         type: String,
         required: true,
-        // unique:true
+        unique:true
         // index: true,
     },
     Favorito:{

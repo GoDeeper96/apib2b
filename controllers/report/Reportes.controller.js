@@ -195,6 +195,104 @@ export const EditAssignReporte = async(req,res)=>{
         res.status(500).send(getError);   
     }
 }
+export const EditarReporte = async(req,res)=>{
+    const { FormData } = req.body
+    const nuevoPost = new EventosModel({
+        Autor:FormData.Autor,
+        EventoNombre:'Guardando cambios en Reporte...',
+        Descripcion:`Editando reporte ${FormData.Nombre}`,
+        Funcion:'editar:reporte', // = EDITAR
+        ConsultaPayload:JSON.stringify(req.body),
+        Response:'En progreso...',
+        ResponseTamaño:0,
+        FechaStart:moment().format('YYYY-MM-DD hh:mm:ss'),
+        FechaEnd:null,
+        TimeSpentSec:0,
+        Status:'LOADING',
+        StatusCode:0
+    })
+    try {
+            console.log(FormData)
+            const repUsuarios = await Reportes_UsuariosModel.find({
+                Usuario:FormData.Usuario
+            })
+            const itemsStorageParsed = JSON.parse(FormData.itemsStorage)
+            //  await ReporteModel.findByIdAndDelete(dupId)
+            // await Reportes_UsuariosModel.deleteMany({PKIDReporte:dupId})
+            await PaginaReportesModel.deleteMany({PKIDReporte:FormData.PKIDReporte})
+            if(FormData.Favorito) //SI ES FAVORITO ENTONCES CAMBIAR EL FAVORITO ANTERIOR Y PONERLE FALSO Y AL NUEVO HAY QUE PONERLE TRUE SOLO DEBE EXISTIR UN FAVORITOP
+        
+            {   
+            
+                for (let index = 0; index < repUsuarios.length; index++) {
+                    const existeFavorito = await ReporteModel.findById(repUsuarios[index].PKIDReporte)
+                    if(existeFavorito&&existeFavorito.Favorito)
+                    {
+                        const updateado = await ReporteModel.findByIdAndUpdate(repUsuarios[index].PKIDReporte,
+                        {
+                            Favorito:false
+                        }
+                    )
+                    }
+                    
+                }
+               
+            }
+            const reporteUpdate = await ReporteModel.findByIdAndUpdate(FormData.PKIDReporte,{
+                Nombre:FormData.Nombre,
+                Favorito:FormData.Favorito?true:false,
+                Descripcion:FormData.Descripcion,
+                DinamicoEstatico:FormData.DinamicoEstatico?true:false,
+                RutaImagenReporte:'',
+                // Editable:FormData.Editable?true:false,
+                Autor:FormData.Usuario,
+                
+            })
+            // const reporteUsuarioUpdate = await Reportes_UsuariosModel.findOneAndUpdate({
+
+            // },{})
+            for (let index = 0; index < FormData.Paginas.length; index++) {
+            
+                const PaginaN = itemsStorageParsed.filter(x=>x.idReporte===FormData.Paginas[index].idReporte)
+                
+                const nuevaPagina = new PaginaReportesModel({
+                    // Usuario:FormData.Usuario,
+                    PKIDReporte:FormData.PKIDReporte,
+                    IDReporte:FormData.Nombre,
+                    Descripcion:FormData.Paginas[index].DescripcionReporte,
+                    Nombre:FormData.Paginas[index].idReporte,
+                    ReporteData:JSON.stringify(PaginaN)
+                })
+                await nuevaPagina.save()
+                
+            }
+            
+
+            const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
+            const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
+            const ResponseTamaño = 1;
+
+            // Actualizar el evento con estado "DONE"
+            await EventosModel.findByIdAndUpdate(nuevoPost.id, {
+                Response: 'FormData',
+                ResponseTamaño,
+                FechaEnd,
+                TimeSpentSec,
+                Status: 'DONE',
+                StatusCode: 200
+            });
+            res.json({
+                estado:'Success',
+                mensaje:'Ok',
+                error:null
+            })
+        
+    } catch (error) {
+        console.error(error);
+        const getError = MapError(error); // Función para mapear el error
+        res.status(500).send(getError);   
+    }
+}
 export const ShareAsignReport = async(req,res)=>{
     const { NombreReporte,
         IDReporte,
@@ -395,149 +493,134 @@ export const crearReporte = async(req,res)=>{
         // console.log(FormData)
         // console.log(FormData)
         // console.log(req.body)
-        // const nuevoPost = new EventosModel({
-        //     Autor:FormData.Autor,
-        //     EventoNombre:'Guardando cambios en Reporte...',
-        //     Descripcion:`Creando reporte ${FormData.Nombre}`,
-        //     Funcion:'crear:reporte', //CREAR = EDITAR
-        //     ConsultaPayload:JSON.stringify(req.body),
-        //     Response:'En progreso...',
-        //     ResponseTamaño:0,
-        //     FechaStart:moment().format('YYYY-MM-DD hh:mm:ss'),
-        //     FechaEnd:null,
-        //     TimeSpentSec:0,
-        //     Status:'LOADING',
-        //     StatusCode:0
-        // })
+        const nuevoPost = new EventosModel({
+            Autor:FormData.Autor,
+            EventoNombre:'Guardando cambios en Reporte...',
+            Descripcion:`Creando reporte ${FormData.Nombre}`,
+            Funcion:'crear:reporte', //CREAR = EDITAR
+            ConsultaPayload:JSON.stringify(req.body),
+            Response:'En progreso...',
+            ResponseTamaño:0,
+            FechaStart:moment().format('YYYY-MM-DD hh:mm:ss'),
+            FechaEnd:null,
+            TimeSpentSec:0,
+            Status:'LOADING',
+            StatusCode:0
+        })
         // await nuevoPost.save()    
-        let nuevoPost = null
+        // let nuevoPost = null
     try {
-        let duplicado = false
-        let dupId = null
+        // let duplicado = false
+        // let dupId = null
         const repUsuarios = await Reportes_UsuariosModel.find({
             Usuario:FormData.Usuario
         })
-        for (let index = 0; index < repUsuarios.length; index++) {
-            const ExisteReporteConMismoNombre = await ReporteModel.findById(repUsuarios[index].PKIDReporte)
-            if(ExisteReporteConMismoNombre.Nombre===FormData.Nombre)
-            {
-                duplicado=true
-                dupId=ExisteReporteConMismoNombre.id
-                // return res.status(500).send({
-                //     estado:"Error",
-                //     mensaje:"Nombre de reporte duplicado",
-                //     error:"Reporte Duplicacion"
-                // })
-            }
-        }
+        // for (let index = 0; index < repUsuarios.length; index++) {
+        //     const ExisteReporteConMismoNombre = await ReporteModel.findById(repUsuarios[index].PKIDReporte)
+        //     if(ExisteReporteConMismoNombre.Nombre===FormData.Nombre)
+        //     {
+        //         duplicado=true
+        //         dupId=ExisteReporteConMismoNombre.id
+        //         // return res.status(500).send({
+        //         //     estado:"Error",
+        //         //     mensaje:"Nombre de reporte duplicado",
+        //         //     error:"Reporte Duplicacion"
+        //         // })
+        //     }
+        // }
         const itemsStorageParsed = JSON.parse(FormData.itemsStorage)
-        if(duplicado&&dupId) //CAMBIARA CUANDO SE PONGA LA LOGICA DE COMPARTIR
-        {
-            nuevoPost = new EventosModel({
-                Autor:FormData.Autor,
-                EventoNombre:'Editando reporte...',
-                Descripcion:`Editando reporte ${FormData.Nombre}`,
-                Funcion:'editar:reporte', //CREAR = EDITAR
-                ConsultaPayload:JSON.stringify(req.body),
-                Response:'En progreso...',
-                ResponseTamaño:0,
-                FechaStart:moment().format('YYYY-MM-DD hh:mm:ss'),
-                FechaEnd:null,
-                TimeSpentSec:0,
-                Status:'LOADING',
-                StatusCode:0
-            })
-            await nuevoPost.save()    
+        // if(duplicado&&dupId) //CAMBIARA CUANDO SE PONGA LA LOGICA DE COMPARTIR
+        // {
+        //     nuevoPost = new EventosModel({
+        //         Autor:FormData.Autor,
+        //         EventoNombre:'Editando reporte...',
+        //         Descripcion:`Editando reporte ${FormData.Nombre}`,
+        //         Funcion:'editar:reporte', //CREAR = EDITAR
+        //         ConsultaPayload:JSON.stringify(req.body),
+        //         Response:'En progreso...',
+        //         ResponseTamaño:0,
+        //         FechaStart:moment().format('YYYY-MM-DD hh:mm:ss'),
+        //         FechaEnd:null,
+        //         TimeSpentSec:0,
+        //         Status:'LOADING',
+        //         StatusCode:0
+        //     })
+        //     await nuevoPost.save()    
 
 
 
 
-            // await ReporteModel.findByIdAndDelete(dupId)
-            // await Reportes_UsuariosModel.deleteMany({PKIDReporte:dupId})
-            await PaginaReportesModel.deleteMany({PKIDReporte:dupId})
-            if(FormData.Favorito) //SI ES FAVORITO ENTONCES CAMBIAR EL FAVORITO ANTERIOR Y PONERLE FALSO Y AL NUEVO HAY QUE PONERLE TRUE SOLO DEBE EXISTIR UN FAVORITOP
+        //     // await ReporteModel.findByIdAndDelete(dupId)
+        //     // await Reportes_UsuariosModel.deleteMany({PKIDReporte:dupId})
+        //     await PaginaReportesModel.deleteMany({PKIDReporte:dupId})
+        //     if(FormData.Favorito) //SI ES FAVORITO ENTONCES CAMBIAR EL FAVORITO ANTERIOR Y PONERLE FALSO Y AL NUEVO HAY QUE PONERLE TRUE SOLO DEBE EXISTIR UN FAVORITOP
         
-            {   
+        //     {   
             
-                for (let index = 0; index < repUsuarios.length; index++) {
-                    const existeFavorito = await ReporteModel.findById(repUsuarios[index].PKIDReporte)
-                    if(existeFavorito&&existeFavorito.Favorito)
-                    {
-                        const updateado = await ReporteModel.findByIdAndUpdate(repUsuarios[index].PKIDReporte,
-                        {
-                            Favorito:false
-                        }
-                    )
-                    }
+        //         for (let index = 0; index < repUsuarios.length; index++) {
+        //             const existeFavorito = await ReporteModel.findById(repUsuarios[index].PKIDReporte)
+        //             if(existeFavorito&&existeFavorito.Favorito)
+        //             {
+        //                 const updateado = await ReporteModel.findByIdAndUpdate(repUsuarios[index].PKIDReporte,
+        //                 {
+        //                     Favorito:false
+        //                 }
+        //             )
+        //             }
                     
-                }
+        //         }
                
-            }
-            const reporteUpdate = await ReporteModel.findByIdAndUpdate(dupId,{
-                Nombre:FormData.Nombre,
-                Favorito:FormData.Favorito?true:false,
-                Descripcion:FormData.Descripcion,
-                DinamicoEstatico:FormData.DinamicoEstatico?true:false,
-                RutaImagenReporte:'',
-                // Editable:FormData.Editable?true:false,
-                Autor:FormData.Usuario,
+        //     }
+        //     const reporteUpdate = await ReporteModel.findByIdAndUpdate(dupId,{
+        //         Nombre:FormData.Nombre,
+        //         Favorito:FormData.Favorito?true:false,
+        //         Descripcion:FormData.Descripcion,
+        //         DinamicoEstatico:FormData.DinamicoEstatico?true:false,
+        //         RutaImagenReporte:'',
+        //         // Editable:FormData.Editable?true:false,
+        //         Autor:FormData.Usuario,
                 
-            })
-            // const reporteUsuarioUpdate = await Reportes_UsuariosModel.findOneAndUpdate({
+        //     })
+        //     // const reporteUsuarioUpdate = await Reportes_UsuariosModel.findOneAndUpdate({
 
-            // },{})
-            for (let index = 0; index < FormData.Paginas.length; index++) {
+        //     // },{})
+        //     for (let index = 0; index < FormData.Paginas.length; index++) {
             
-                const PaginaN = itemsStorageParsed.filter(x=>x.idReporte===FormData.Paginas[index].idReporte)
+        //         const PaginaN = itemsStorageParsed.filter(x=>x.idReporte===FormData.Paginas[index].idReporte)
                 
-                const nuevaPagina = new PaginaReportesModel({
-                    // Usuario:FormData.Usuario,
-                    PKIDReporte:dupId,
-                    IDReporte:FormData.Nombre,
-                    Descripcion:FormData.Paginas[index].DescripcionReporte,
-                    Nombre:FormData.Paginas[index].idReporte,
-                    ReporteData:JSON.stringify(PaginaN)
-                })
-                await nuevaPagina.save()
+        //         const nuevaPagina = new PaginaReportesModel({
+        //             // Usuario:FormData.Usuario,
+        //             PKIDReporte:dupId,
+        //             IDReporte:FormData.Nombre,
+        //             Descripcion:FormData.Paginas[index].DescripcionReporte,
+        //             Nombre:FormData.Paginas[index].idReporte,
+        //             ReporteData:JSON.stringify(PaginaN)
+        //         })
+        //         await nuevaPagina.save()
                 
-            }
+        //     }
             
-            // const pivotDataSource = getPivotDataSource(query,JSON.parse(dataRedisExisteConQuery))
-            const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
-            const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
-            const ResponseTamaño = 1;
+        //     // const pivotDataSource = getPivotDataSource(query,JSON.parse(dataRedisExisteConQuery))
+        //     const FechaEnd = moment().format('YYYY-MM-DD HH:mm:ss');
+        //     const TimeSpentSec = moment(FechaEnd).diff(moment(nuevoPost.FechaStart), 'seconds');
+        //     const ResponseTamaño = 1;
 
-            // Actualizar el evento con estado "DONE"
-            await EventosModel.findByIdAndUpdate(nuevoPost.id, {
-                Response: 'FormData',
-                ResponseTamaño,
-                FechaEnd,
-                TimeSpentSec,
-                Status: 'DONE',
-                StatusCode: 200
-            });
-            return res.json({
-                estado:'Success',
-                mensaje:'Ok',
-                error:null
-            })
-        }
-        else{
-            nuevoPost = new EventosModel({
-                Autor:FormData.Autor,
-                EventoNombre:'Creando reporte...',
-                Descripcion:`Creando reporte ${FormData.Nombre}`,
-                Funcion:'crear:reporte', //CREAR = EDITAR
-                ConsultaPayload:JSON.stringify(req.body),
-                Response:'En progreso...',
-                ResponseTamaño:0,
-                FechaStart:moment().format('YYYY-MM-DD hh:mm:ss'),
-                FechaEnd:null,
-                TimeSpentSec:0,
-                Status:'LOADING',
-                StatusCode:0
-            })
-            await nuevoPost.save()  
+        //     // Actualizar el evento con estado "DONE"
+        //     await EventosModel.findByIdAndUpdate(nuevoPost.id, {
+        //         Response: 'FormData',
+        //         ResponseTamaño,
+        //         FechaEnd,
+        //         TimeSpentSec,
+        //         Status: 'DONE',
+        //         StatusCode: 200
+        //     });
+        //     return res.json({
+        //         estado:'Success',
+        //         mensaje:'Ok',
+        //         error:null
+        //     })
+        // }
+      
 
         //1.PRIMERO CREAR REPORTE EN REPORTEMODEL
         //2.CREAR REPORTES EN REPORTE USUARIO 
@@ -611,12 +694,12 @@ export const crearReporte = async(req,res)=>{
             Status: 'DONE',
             StatusCode: 200
         });
-        return res.json({
+         res.json({
             estado:'Success',
             mensaje:'Ok',
             error:null
         })
-        }   
+       
      
         
         

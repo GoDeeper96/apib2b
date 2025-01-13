@@ -2,7 +2,7 @@ import { Router } from "express";
 
 import { CheckAccess, CheckCompartir, CheckCompartirNivelAdministrativo, CheckDeleteQuery, DesAsignarQuery, protect } from "../middleware/auth.middleware.js";
 import { Calculo,  GetColumnasPorTabla, GetDataCol, GetDataQuery, GetQueriesAutorYCompartidos, GetQueriesVistaAutor, GetSearchedValue, GetTablasUsuario, ValidateQuery } from "../controllers/query/CalcQuery.controller.js";
-import { AsignarQuery,DeleteQuery, ConvertirTable2Json, CrearQuery,PrevisualizarData,testing, GetSharedViewQuery, ShareQuery, UnshareQuery } from "../controllers/query/Query.controller.js";
+import { AsignarQuery,DeleteQuery, ConvertirTable2Json, CrearQuery,PrevisualizarData,testing, GetSharedViewQuery, ShareQuery, UnshareQuery, PrevisualizarDataSql } from "../controllers/query/Query.controller.js";
 
 const router = Router()
 //FALTA EDITAR QUERY
@@ -26,6 +26,7 @@ router.post('/deletequery',protect,CheckDeleteQuery,DeleteQuery) //OK - ACCESOS 
 router.post('/getqueriesautor',protect,GetQueriesAutorYCompartidos)
 router.post('/getqueriesvista',protect,GetQueriesVistaAutor)
 router.post('/convertirtabletojson',protect,ConvertirTable2Json) // FALTA - no necesita
-router.post('/previsualizardata',protect,PrevisualizarData)
+router.post('/previsualizardata',protect,PrevisualizarDataSql)
+
 router.get('/testb2b',testing)
 export default router

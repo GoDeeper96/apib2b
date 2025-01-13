@@ -15,11 +15,11 @@ cargaQueue.process(async (job) => {
 
   try {
     // Realiza la carga pesada
-    const queryJson = JSON.stringify(FormData.queryTable);
+    const queryJson = FormData.queryTable;
     const columnas = FormData.columnas;
     console.log(queryJson)
     console.log(columnas)
-    console.log(nombre_tabla)
+    // console.log(nombre_tabla)
     const InsertarData = await axios.post('http://170.231.81.173:5000/b2b/cargab2b', {
       filter: queryJson,
       nombre_tabla: FormData.nombre_tabla,

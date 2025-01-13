@@ -227,7 +227,7 @@ export function runDynamicQuery6_actual(query) {
   
     return pipeline;
   }
-export function generateClickhouseQueryv2(query) {
+export function generateClickhouseQueryv2(query,table) {
     const { rows, columns, values, filters } = query;
   
     // Construir el SELECT para las filas y columnas
@@ -275,7 +275,7 @@ export function generateClickhouseQueryv2(query) {
         ${selectFields.join(', ')},
         ${valueFields.join(', ')}
       FROM
-        ventas_b2b
+        ${table}
       ${whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : ''}
       ${groupByFields.length > 0 ? `GROUP BY ${groupByFields.join(', ')}` : ''}
     `.trim();
@@ -292,7 +292,7 @@ export function generateClickhouseQueryv2(query) {
             ${valueFields.join(', ')},
             SUM(${percentageField}) AS total_sum
           FROM
-            ventas_b2b
+          ${table}
           ${whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : ''}
           ${groupByFields.length > 0 ? `GROUP BY ${groupByFields.join(', ')}` : ''}
         ) AS subquery
