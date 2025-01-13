@@ -11,7 +11,7 @@ import { clickhouse } from "../../connections/clickhousedb.js";
 import { createClient } from "@clickhouse/client";
 
 export const Calculo = async(req,res)=>{
-    const { Filas,Columnas,Filtros,Valores,PanelFiltros,Usuario } = req.body
+    const { Filas,Columnas,Filtros,Valores,PanelFiltros,Usuario,NombreQueryUnico } = req.body
      //IN PROCESS QUERY
 
     //  const AutorUsuario = await UsuariosModel.findOne({Usuario:Usuario})
@@ -35,7 +35,7 @@ export const Calculo = async(req,res)=>{
        
 
 
-
+        
         const query = {
           rows: Filas,
           columns: Columnas,
@@ -43,8 +43,13 @@ export const Calculo = async(req,res)=>{
           filters: Filtros
        };
         // const sd = await InitClientRedisOther().connect()
-        
-        const dnuew = generateClickhouseQueryv2(query)
+        const queryData = await QueriesModel.findOne({Nombre:NombreQueryUnico})
+        let nombreTablaOrigen = 'ventas_b2b'
+        if(queryData&&queryData.TablaOrigen)
+        {
+            nombreTablaOrigen=queryData.TablaOrigen
+        }
+        const dnuew = generateClickhouseQueryv2(query,nombreTablaOrigen)
         // // console.log(dnuew)
         const result = await clickhouse.query({
             query:dnuew,
